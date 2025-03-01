@@ -2,62 +2,57 @@
 
 #include "game/board.hpp"
 #include "game/game_state.hpp"
+#include "game/moves.hpp"
 #include "ui/render.hpp"
 
-#include <SFML/Graphics/RenderWindow.hpp>
-
-#include <cstdint>
 #include <expected>
+#include <vector>
 
 namespace chessfml {
 
 class selection_system
 {
 public:
-    void select(std::uint8_t pos) noexcept { m_selected = pos; }
-
-    void clear() noexcept { m_selected.reset(); }
-
-    bool has_selection() const noexcept { return m_selected.has_value(); }
-
-    std::uint8_t get() const noexcept { return m_selected.value_or(-1); }
+    void   select(move_t pos) noexcept { m_selected = pos; }
+    void   clear() noexcept { m_selected.reset(); }
+    bool   has_selection() const noexcept { return m_selected.has_value(); }
+    move_t get() const noexcept { return m_selected.value_or(0xFF); }
 
 private:
-    std::optional<std::uint8_t> m_selected;
+    std::optional<move_t> m_selected;
 };
 
 class game
 {
 public:
     game();
-
     void run();
     void process_events();
     void update(double elapsed);
-
-    void move_piece(std::uint8_t, std::uint8_t);
-    void update_selected_tile(std::uint8_t);
+    bool move_piece(move_t from, move_t to);
+    void update_selected_tile(move_t clicked_pos);
 
 private:
-    void handle_mouse_click(const sf::Vector2i&);
+    void   handle_mouse_click(const sf::Vector2i& mouse_pos);
+    void   try_select(move_t pos);
+    void   try_switch_selection(move_t new_pos);
+    bool   is_valid_selection(move_t pos) const;
+    void   clear_selection();
+    move_t convert_to_board_pos(const sf::Vector2i& mouse_pos) const noexcept;
+    bool   is_valid_move(move_t to) const;
 
-    void try_select(std::uint8_t);
-    void try_switch_selection(std::uint8_t);
-    bool is_valid_selection(std::uint8_t) const;
-    void clear_selection();
+    std::vector<move_info> get_valid_moves_for_selected() const;
 
-    std::uint8_t convert_to_board_pos(const sf::Vector2i&) const noexcept;
-    bool         is_valid_move(std::uint8_t from, std::uint8_t to) const;
-
-    // SFML stuff
+    // SFML components
     sf::RenderWindow m_window;
     renderer         m_renderer;
 
-    // Game stuff
-    board            m_board;
-    int              m_selected_tile{-1};
+    // Game components
+    board_t          m_board;
     game_state       m_state{};
     selection_system m_selection{};
+
+    std::vector<move_info> m_current_valid_moves;
 };
 
 }  // namespace chessfml

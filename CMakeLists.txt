@@ -18,8 +18,10 @@ add_compile_options(-Wall -Wextra -Wpedantic -Werror -Wno-missing-field-initiali
 
 add_executable(${PROJECT_NAME}
                 ${CMAKE_SOURCE_DIR}/src/main.cpp
-                ${CMAKE_SOURCE_DIR}/src/game/game.cpp
                 ${CMAKE_SOURCE_DIR}/src/game/board.cpp
+                ${CMAKE_SOURCE_DIR}/src/game/moves.cpp
+                ${CMAKE_SOURCE_DIR}/src/game/game.cpp
+                ${CMAKE_SOURCE_DIR}/src/game/game_state.cpp
                 ${CMAKE_SOURCE_DIR}/src/ui/render.cpp
 )
 

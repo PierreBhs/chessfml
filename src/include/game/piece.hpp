@@ -78,38 +78,6 @@ private:
     bool    m_has_moved{false};
 };
 
-using move_t = int;
-
-inline std::vector<move_t> get_pawn_moves(const piece_t& piece)
-{
-    std::vector<move_t> move_list;
-    int                 sign = piece.get_color() == piece_t::color_t::White ? -1 : +1;
-
-    move_list.push_back(piece.get_pos() + (sign * config::board::size));
-    if (!piece.has_moved()) {
-        move_list.push_back(piece.get_pos() + 2 * (sign * config::board::size));
-    }
-
-    return move_list;
-}
-
-inline std::vector<move_t> get_rook_moves(const piece_t&)
-{
-    return {};
-}
-
-inline std::vector<move_t> get_valid_moves(const piece_t& piece)
-{
-    switch (piece.get_type()) {
-        case piece_t::type_t::Pawn:
-            return get_pawn_moves(piece);
-        case piece_t::type_t::Rook:
-            return get_rook_moves(piece);
-        default:
-            return get_pawn_moves(piece);
-    }
-}
-
 // class empty : public piece<empty>
 // {
 // public:

@@ -2,7 +2,7 @@
 
 namespace chessfml {
 
-std::expected<std::string_view, fen_error> board::fen_to_board(std::string_view fen)
+std::expected<std::string_view, fen_error> board_t::fen_to_board(std::string_view fen)
 {
     std::uint8_t index{0u};
     for (char c : fen) {
@@ -65,12 +65,12 @@ std::expected<std::string_view, fen_error> board::fen_to_board(std::string_view 
     return "";
 }
 
-void board::set_board_fen(std::string_view fen)
+void board_t::set_board_fen(std::string_view fen)
 {
     fen_to_board(fen).value_or(config::board::fen_starting_position);
 }
 
-void board::print_board() const
+void board_t::print_board() const
 {
     auto row{0};
     for (const auto& piece : m_board) {

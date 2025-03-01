@@ -8,7 +8,7 @@
 namespace chessfml {
 
 enum class fen_error { InvalidCharacter, InvalidFormat };
-class board
+class board_t
 {
 public:
     std::expected<std::string_view, fen_error> fen_to_board(std::string_view);

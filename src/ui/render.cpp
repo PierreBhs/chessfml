@@ -42,7 +42,7 @@ renderer::renderer(sf::RenderWindow& window)
     m_glow_shader.setUniform("glowColor", sf::Glsl::Vec4(1.0f, 0.9f, 0.2f, 0.7f));
 }
 
-void renderer::render(const board& board)
+void renderer::render(const board_t& board)
 {
 
     m_window.clear();
@@ -50,7 +50,7 @@ void renderer::render(const board& board)
     draw_board();
     draw_pieces(board);
 
-    draw_possible_moves(board);
+    draw_possible_moves();
 
     m_window.display();
 }
@@ -84,7 +84,7 @@ void renderer::draw_board()
     }
 }
 
-void renderer::draw_pieces(const board& board)
+void renderer::draw_pieces(const board_t& board)
 {
     for (const auto& piece : board) {
         if (piece.get_type() == piece_t::type_t::Empty) {
@@ -108,24 +108,36 @@ void renderer::draw_pieces(const board& board)
     }
 }
 
-void renderer::draw_possible_moves(const board& board)
+void renderer::set_valid_moves(const std::vector<move_info>& moves)
 {
-    if (m_selected_tile == -1 || board[m_selected_tile].get_type() == piece_t::type_t::Empty) {
+    m_valid_moves = moves;
+}
+
+void renderer::draw_possible_moves()
+{
+    if (m_selected_tile == -1) {
         return;
     }
 
-    auto move_list = get_valid_moves(board[m_selected_tile]);
     auto tile_size = config::board::tile_size_ui;
-    for (auto move : move_list) {
+    for (const auto& move : m_valid_moves) {
         sf::CircleShape circle(tile_size / 5);
-        circle.setFillColor(sf::Color{0, 0, 0, 100});
-        auto [pos_x, pos_y] = tile_index_to_sfml_pos(move);
+
+        // Use different colors for different move types
+        if (move.is_capture) {
+            circle.setFillColor(sf::Color{200, 0, 0, 120});  // Red for captures
+        } else if (move.is_castling) {
+            circle.setFillColor(sf::Color{0, 0, 200, 120});  // Blue for castling
+        } else {
+            circle.setFillColor(sf::Color{0, 0, 0, 100});  // Default
+        }
+
+        auto [pos_x, pos_y] = tile_index_to_sfml_pos(move.to);
         circle.setPosition({pos_x + tile_size / 4, pos_y + tile_size / 4});
 
         m_window.draw(circle);
     }
 }
-
 void renderer::load_pieces_textures()
 {
     const std::array<std::string, 12> filenames = {"bP.png",
