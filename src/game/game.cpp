@@ -148,72 +148,21 @@ bool game::move_piece(move_t from, move_t to)
 
     const auto& move = *it;
 
-    if (move.is_en_passant) {
-        const auto [capture_rank, capture_file] = position_to_rank_file(move.to);
-        const auto   piece_color = m_board[from].get_color();
-        const int    ep_rank = piece_color == piece_t::color_t::White ? capture_rank + 1 : capture_rank - 1;
-        const move_t ep_pos = rank_file_to_position(ep_rank, capture_file);
-
-        m_board[ep_pos] = piece_t{};  // Empty the captured pawn's square
+    if (move.is_en_passant()) {
+        handle_en_passant(from, to);
     }
 
-    if (move.is_castling) {
-        const auto piece_color = m_board[from].get_color();
-        const bool is_kingside = to > from;
-
-        if (is_kingside) {
-            const move_t rook_from = piece_color == piece_t::color_t::White ? 7 : 63;
-            const move_t rook_to = piece_color == piece_t::color_t::White ? 5 : 61;
-
-            m_board[rook_to] = m_board[rook_from];
-            m_board[rook_to].set_pos(rook_to);
-            m_board[rook_to].set_moved(true);
-            m_board[rook_from] = piece_t{};
-        } else {
-            const move_t rook_from = piece_color == piece_t::color_t::White ? 0 : 56;
-            const move_t rook_to = piece_color == piece_t::color_t::White ? 3 : 59;
-
-            m_board[rook_to] = m_board[rook_from];
-            m_board[rook_to].set_pos(rook_to);
-            m_board[rook_to].set_moved(true);
-            m_board[rook_from] = piece_t{};
-        }
+    if (move.is_castling()) {
+        handle_castling(from, to);
     }
 
-    if (move.is_promotion) {
+    if (move.is_promotion()) {
         m_board[from].set_type(static_cast<piece_t::type_t>(move.promotion_piece));
     }
 
-    // Standard move
-    m_board[to] = m_board[from];
-    m_board[to].set_pos(to);
-    m_board[to].set_moved(true);
-    m_board[from] = piece_t{};
+    move_piece_board(from, to);
 
-    // Update en passant target
-    if (m_board[to].get_type() == piece_t::type_t::Pawn &&
-        std::abs(static_cast<int>(to) - static_cast<int>(from)) == 16) {
-        // Pawn moved two squares, set en passant target
-        m_state.set_en_passant_target((from + to) / 2);
-    } else {
-        m_state.set_en_passant_target(std::nullopt);
-    }
-
-    // Update castling rights
-    if (m_board[to].get_type() == piece_t::type_t::King) {
-        m_state.disable_kingside_castling(m_state.get_player_turn());
-        m_state.disable_queenside_castling(m_state.get_player_turn());
-    } else if (m_board[to].get_type() == piece_t::type_t::Rook) {
-        if (from == (m_state.get_player_turn() == game_state::player_turn::White ? 0 : 56)) {
-            m_state.disable_queenside_castling(m_state.get_player_turn());
-        } else if (from == (m_state.get_player_turn() == game_state::player_turn::White ? 7 : 63)) {
-            m_state.disable_kingside_castling(m_state.get_player_turn());
-        }
-    }
-
-    m_state.next_turn();
-
-    m_state.set_check(move_generator::is_in_check(m_board, m_state.get_player_turn()));
+    update_game_state_after_move(from, to);
 
     m_board.print_board();
 
@@ -231,6 +180,68 @@ move_t game::convert_to_board_pos(const sf::Vector2i& mouse_pos) const noexcept
     const int rank = (config::board::size - 1) - (mouse_pos.y / tile_height);
 
     return calculate_selected_tile(file, rank);
+}
+
+void game::handle_en_passant(move_t from, move_t to)
+{
+    const auto [capture_rank, capture_file] = position_to_rank_file(to);
+    const auto   piece_color = m_board[from].get_color();
+    const int    ep_rank = piece_color == piece_t::color_t::White ? capture_rank + 1 : capture_rank - 1;
+    const move_t ep_pos = rank_file_to_position(ep_rank, capture_file);
+
+    m_board[ep_pos] = piece_t{};
+}
+
+void game::handle_castling(move_t from, move_t to)
+{
+    // const auto piece_color = m_board[from].get_color();
+    const bool is_kingside = to > from;
+
+    if (is_kingside) {
+        const move_t rook_from = from + 3;  // King + 3 is always the rook position
+        const move_t rook_to = from + 1;    // King + 1 is the rook's final position
+
+        move_piece_board(rook_from, rook_to);
+    } else {
+        const move_t rook_from = from - 4;  // King - 4 is always the rook position
+        const move_t rook_to = from - 1;    // King - 1 is the rook's final position
+
+        move_piece_board(rook_from, rook_to);
+    }
+}
+
+void game::update_game_state_after_move(move_t from, move_t to)
+{
+    if (m_board[to].get_type() == piece_t::type_t::Pawn &&
+        std::abs(static_cast<int>(to) - static_cast<int>(from)) == 16) {
+        // Pawn moved two squares, set en passant target
+        m_state.set_en_passant_target((from + to) / 2);
+    } else {
+        m_state.set_en_passant_target(std::nullopt);
+    }
+
+    if (m_board[to].get_type() == piece_t::type_t::King) {
+        m_state.disable_kingside_castling(m_state.get_player_turn());
+        m_state.disable_queenside_castling(m_state.get_player_turn());
+    } else if (m_board[to].get_type() == piece_t::type_t::Rook) {
+        if (from == (m_state.get_player_turn() == game_state::player_turn::White ? 0 : 56)) {
+            m_state.disable_queenside_castling(m_state.get_player_turn());
+        } else if (from == (m_state.get_player_turn() == game_state::player_turn::White ? 7 : 63)) {
+            m_state.disable_kingside_castling(m_state.get_player_turn());
+        }
+    }
+
+    m_state.next_turn();
+
+    m_state.set_check(move_generator::is_in_check(m_board, m_state.get_player_turn()));
+}
+
+void game::move_piece_board(move_t from, move_t to)
+{
+    m_board[to] = m_board[from];
+    m_board[to].set_pos(to);
+    m_board[to].set_moved(true);
+    m_board[from] = piece_t{};
 }
 
 }  // namespace chessfml

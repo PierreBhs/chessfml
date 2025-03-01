@@ -33,15 +33,20 @@ public:
     void update_selected_tile(move_t clicked_pos);
 
 private:
-    void   handle_mouse_click(const sf::Vector2i& mouse_pos);
-    void   try_select(move_t pos);
-    void   try_switch_selection(move_t new_pos);
-    bool   is_valid_selection(move_t pos) const;
-    void   clear_selection();
+    void handle_mouse_click(const sf::Vector2i& mouse_pos);
+    void try_select(move_t pos);
+    void try_switch_selection(move_t new_pos);
+    bool is_valid_selection(move_t pos) const;
+    void clear_selection();
+
     move_t convert_to_board_pos(const sf::Vector2i& mouse_pos) const noexcept;
     bool   is_valid_move(move_t to) const;
 
-    std::vector<move_info> get_valid_moves_for_selected() const;
+    void handle_en_passant(move_t, move_t);
+    void handle_castling(move_t, move_t);
+    void update_game_state_after_move(move_t, move_t);
+
+    void move_piece_board(move_t, move_t);
 
     // SFML components
     sf::RenderWindow m_window;

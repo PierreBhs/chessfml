@@ -124,9 +124,9 @@ void renderer::draw_possible_moves()
         sf::CircleShape circle(tile_size / 5);
 
         // Use different colors for different move types
-        if (move.is_capture) {
+        if (move.is_capture()) {
             circle.setFillColor(sf::Color{200, 0, 0, 120});  // Red for captures
-        } else if (move.is_castling) {
+        } else if (move.is_castling()) {
             circle.setFillColor(sf::Color{0, 0, 200, 120});  // Blue for castling
         } else {
             circle.setFillColor(sf::Color{0, 0, 0, 100});  // Default

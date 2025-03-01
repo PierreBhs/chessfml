@@ -48,7 +48,7 @@ std::vector<chessfml::move_info> get_sliding_piece_moves(const chessfml::board_t
                 // Hit a piece
                 if (target.get_color() != piece.get_color()) {
                     // Enemy piece - can capture
-                    moves.push_back({.from = pos, .to = new_pos, .is_capture = true});
+                    moves.push_back({.from = pos, .to = new_pos, .type = move_type_flag::Capture});
                 }
                 break;  // Stop in this direction after hitting a piece
             }
@@ -74,14 +74,14 @@ std::vector<move_info> move_generator::get_legal_moves(const board_t& board, con
     auto it = std::remove_if(moves.begin(), moves.end(), [&](const move_info& move) {
         board_t temp_board = board;
 
-        if (move.is_en_passant) {
+        if (move.type == move_type_flag::EnPassant) {
             const auto [capture_rank, capture_file] = position_to_rank_file(move.to);
             const int    ep_rank = piece.get_color() == piece_t::color_t::White ? capture_rank + 1 : capture_rank - 1;
             const move_t ep_pos = rank_file_to_position(ep_rank, capture_file);
             temp_board[ep_pos] = piece_t{};  // Empty the captured pawn's square
         }
 
-        if (move.is_castling) {
+        if (move.type == move_type_flag::Castling) {
             const bool is_kingside = move.to > move.from;
 
             if (is_kingside) {
@@ -177,7 +177,7 @@ std::vector<move_info> move_generator::get_pawn_moves(const board_t& board, cons
                                   piece_t::type_t::Knight}) {
                     moves.push_back({.from = pos,
                                      .to = forward_pos,
-                                     .is_promotion = true,
+                                     .type = move_type_flag::Promotion,
                                      .promotion_piece = static_cast<std::uint8_t>(type)});
                 }
             } else {
@@ -219,18 +219,18 @@ std::vector<move_info> move_generator::get_pawn_moves(const board_t& board, cons
                                       piece_t::type_t::Knight}) {
                         moves.push_back({.from = pos,
                                          .to = capture_pos,
-                                         .is_capture = true,
-                                         .is_promotion = true,
+                                         .type = move_type_flag::Capture | move_type_flag::Promotion,
                                          .promotion_piece = static_cast<std::uint8_t>(type)});
                     }
                 } else {
-                    moves.push_back({.from = pos, .to = capture_pos, .is_capture = true});
+                    moves.push_back({.from = pos, .to = capture_pos, .type = move_type_flag::Capture});
                 }
             }
 
             // En passant capture
             if (state.get_en_passant_target().has_value() && capture_pos == state.get_en_passant_target().value()) {
-                moves.push_back({.from = pos, .to = capture_pos, .is_capture = true, .is_en_passant = true});
+                moves.push_back(
+                    {.from = pos, .to = capture_pos, .type = move_type_flag::Capture | move_type_flag::EnPassant});
             }
         }
     }
@@ -265,7 +265,7 @@ std::vector<move_info> move_generator::get_knight_moves(const board_t& board, mo
         if (target.get_type() == piece_t::type_t::Empty) {
             moves.push_back({.from = pos, .to = new_pos});
         } else if (target.get_color() != knight.get_color()) {
-            moves.push_back({.from = pos, .to = new_pos, .is_capture = true});
+            moves.push_back({.from = pos, .to = new_pos, .type = move_type_flag::Capture});
         }
     }
 
@@ -326,7 +326,7 @@ std::vector<move_info> move_generator::get_king_moves(const board_t& board, cons
         if (target.get_type() == piece_t::type_t::Empty) {
             moves.push_back({.from = pos, .to = new_pos});
         } else if (target.get_color() != king.get_color()) {
-            moves.push_back({.from = pos, .to = new_pos, .is_capture = true});
+            moves.push_back({.from = pos, .to = new_pos, .type = move_type_flag::Capture});
         }
     }
 
@@ -364,7 +364,7 @@ std::vector<move_info> move_generator::get_king_moves(const board_t& board, cons
             if (path_clear && board[rook_pos].get_type() == piece_t::type_t::Rook &&
                 board[rook_pos].get_color() == king_color && !board[rook_pos].has_moved()) {
 
-                moves.push_back({.from = pos, .to = pos + 2, .is_castling = true});
+                moves.push_back({.from = pos, .to = pos + 2, .type = move_type_flag::Castling});
             }
         }
 
@@ -402,7 +402,7 @@ std::vector<move_info> move_generator::get_king_moves(const board_t& board, cons
             if (path_clear && board[rook_pos].get_type() == piece_t::type_t::Rook &&
                 board[rook_pos].get_color() == king_color && !board[rook_pos].has_moved()) {
 
-                moves.push_back({.from = pos, .to = pos - 2, .is_castling = true});
+                moves.push_back({.from = pos, .to = pos - 2, .type = move_type_flag::Castling});
             }
         }
     }
