@@ -70,7 +70,7 @@ void board_t::set_board_fen(std::string_view fen)
     fen_to_board(fen).value_or(config::board::fen_starting_position);
 }
 
-void board_t::print_board() const
+void board_t::print() const
 {
     auto row{0};
     for (const auto& piece : m_board) {

@@ -60,16 +60,7 @@ public:
     void set_color(color_t color) { m_color = color; }
     void set_moved(bool moved) { m_has_moved = moved; }
 
-    void swap(piece_t& other) noexcept
-    {
-        using std::swap;
-        swap(m_type, other.m_type);
-        swap(m_pos, other.m_pos);
-        swap(m_color, other.m_color);
-        swap(m_has_moved, other.m_has_moved);
-    }
-
-    void print_piece() const { std::println("type: {} pos: {}", c_type(), get_pos()); }
+    void print() const { std::println("type: {} pos: {}", c_type(), get_pos()); }
 
 private:
     type_t  m_type;

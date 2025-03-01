@@ -13,7 +13,7 @@ class board_t
 public:
     std::expected<std::string_view, fen_error> fen_to_board(std::string_view);
     void                                       set_board_fen(std::string_view fen);
-    void                                       print_board() const;
+    void                                       print() const;
 
     auto begin() const { return m_board.begin(); }
     auto end() const { return m_board.end(); }

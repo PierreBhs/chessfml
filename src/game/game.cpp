@@ -135,12 +135,24 @@ bool game::is_valid_move(move_t to) const
     return std::ranges::any_of(m_current_valid_moves, [to](const auto& move) { return move.to == to; });
 }
 
+move_t game::convert_to_board_pos(const sf::Vector2i& mouse_pos) const noexcept
+{
+    constexpr int      board_size = config::board::size;
+    const sf::Vector2u window_size = m_window.getSize();
+    const int          tile_width = window_size.x / board_size;
+    const int          tile_height = window_size.y / board_size;
+
+    const int file = mouse_pos.x / tile_width;
+    const int rank = (config::board::size - 1) - (mouse_pos.y / tile_height);
+
+    return calculate_selected_tile(file, rank);
+}
+
 bool game::move_piece(move_t from, move_t to)
 {
     if (from == to)
         return false;
 
-    // Find the move info if it exists
     auto it = std::ranges::find_if(m_current_valid_moves, [to](const auto& move) { return move.to == to; });
 
     if (it == m_current_valid_moves.end())
@@ -164,22 +176,9 @@ bool game::move_piece(move_t from, move_t to)
 
     update_game_state_after_move(from, to);
 
-    m_board.print_board();
+    m_board.print();
 
     return true;
-}
-
-move_t game::convert_to_board_pos(const sf::Vector2i& mouse_pos) const noexcept
-{
-    constexpr int      board_size = config::board::size;
-    const sf::Vector2u window_size = m_window.getSize();
-    const int          tile_width = window_size.x / board_size;
-    const int          tile_height = window_size.y / board_size;
-
-    const int file = mouse_pos.x / tile_width;
-    const int rank = (config::board::size - 1) - (mouse_pos.y / tile_height);
-
-    return calculate_selected_tile(file, rank);
 }
 
 void game::handle_en_passant(move_t from, move_t to)
