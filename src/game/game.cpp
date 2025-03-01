@@ -5,13 +5,15 @@
 
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
+#include <algorithm>
 #include <chrono>
+#include <cstdint>
 #include <print>
 #include <thread>
 
 namespace {
 
-auto calculate_selected_tile(int file, int rank)
+std::uint8_t calculate_selected_tile(int file, int rank)
 {
     return std::abs(7 - rank) * chessfml::config::board::size + file;
 }
@@ -33,6 +35,7 @@ void game::run()
         process_events();
         update(0.);
         m_renderer.render(m_board);
+        std::println("Went through loop!");
     }
 }
 
@@ -58,21 +61,33 @@ void game::update([[maybe_unused]] double elapsed)
     std::this_thread::sleep_for(std::chrono::milliseconds{50});
 }
 
-void game::handle_mouse_click(const sf::Vector2i& pos)
+void game::handle_mouse_click(const sf::Vector2i& mouse_pos)
 {
-    const sf::Vector2u windowSize = m_window.getSize();
-    const int          squareWidth = windowSize.x / config::board::size;
-    const int          squareHeight = windowSize.y / config::board::size;
+    const auto clicked_pos = convert_to_board_pos(mouse_pos);
+    update_selected_tile(clicked_pos);
+}
 
-    const int file = pos.x / squareWidth;
-    const int rank = (config::board::size - 1) - (pos.y / squareHeight);
+void game::update_selected_tile(std::uint8_t clicked_pos)
+{
 
-    std::println("CLICKED ON {} {}", file, rank);
-
-    if (file < 0 || file >= config::board::size || rank < 0 || rank >= config::board::size)
+    if (!m_selection.has_selection()) {
+        try_select(clicked_pos);
         return;
+    }
 
-    set_selected_tile(file, rank);
+    const auto current_sel = m_selection.get();
+
+    if (clicked_pos == current_sel) {
+        clear_selection();
+        return;
+    }
+
+    if (is_valid_move(current_sel, clicked_pos)) {
+        move_piece(current_sel, clicked_pos);
+        clear_selection();
+    } else {
+        try_switch_selection(clicked_pos);
+    }
 }
 
 void game::move_piece(std::uint8_t from, std::uint8_t to)
@@ -92,35 +107,61 @@ void game::move_piece(std::uint8_t from, std::uint8_t to)
 
     m_board[from] = piece_t{};
     m_board[from].set_pos(from);
+
+    m_state.next_turn();
 }
 
-void game::set_selected_tile(int file, int rank)
+void game::try_select(std::uint8_t pos)
 {
-    const auto pos = calculate_selected_tile(file, rank);
-
-    if (m_selected_tile == -1) {
-        if (m_board[pos].get_type() != piece_t::type_t::Empty) {
-            m_selected_tile = pos;
-            m_renderer.set_selected_tile(pos);
-        }
-        return;
+    if (is_valid_selection(pos)) {
+        m_selection.select(pos);
+        m_renderer.set_selected_tile(pos);
     }
+}
 
-    const auto  prev_pos = m_selected_tile;
-    const auto& selected_piece = m_board[prev_pos];
-    auto        move_list = get_valid_moves(selected_piece);
-
-    if (std::ranges::find(move_list, pos) != move_list.end()) {
-        std::println("Piece prev: ");
-        selected_piece.print_piece();
-        move_piece(prev_pos, pos);
-        std::println("Piece prev: ");
-        selected_piece.print_piece();
-
-        m_board.print_board();
+void game::try_switch_selection(std::uint8_t new_pos)
+{
+    if (is_valid_selection(new_pos)) {
+        m_selection.select(new_pos);
+        m_renderer.set_selected_tile(new_pos);
+    } else {
+        clear_selection();
     }
+}
 
-    m_selected_tile = -1;
+bool game::is_valid_selection(std::uint8_t pos) const
+{
+    return pos < 64 && m_board[pos].get_type() != piece_t::type_t::Empty &&
+           std::to_underlying(m_state.get_player_turn()) == std::to_underlying(m_board[pos].get_color());
+}
+
+void game::clear_selection()
+{
+    m_selection.clear();
     m_renderer.set_selected_tile(-1);
 }
+
+std::uint8_t game::convert_to_board_pos(const sf::Vector2i& mouse_pos) const noexcept
+{
+    constexpr int      board_size = config::board::size;
+    const sf::Vector2u window_size = m_window.getSize();
+    const int          tile_width = window_size.x / board_size;
+    const int          tile_height = window_size.y / board_size;
+
+    const int file = mouse_pos.x / tile_width;
+    const int rank = (config::board::size - 1) - (mouse_pos.y / tile_height);
+
+    // if (file < 0 || file >= config::board::size || rank < 0 || rank >= config::board::size)
+    //     return;
+
+    return calculate_selected_tile(file, rank);
+}
+
+bool game::is_valid_move(std::uint8_t from, std::uint8_t to) const
+{
+    const auto& piece = m_board[from];
+    auto        moves = get_valid_moves(piece);
+    return std::ranges::contains(moves, to);
+}
+
 }  // namespace chessfml

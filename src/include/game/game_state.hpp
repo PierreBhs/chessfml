@@ -15,8 +15,8 @@ public:
     void next_turn() { m_turn = (m_turn == player_turn::White) ? player_turn::Black : player_turn::White; }
 
 private:
-    state       m_state;
-    player_turn m_turn{};
+    state       m_state{state::Playing};
+    player_turn m_turn{player_turn::White};
 };
 
 }  // namespace chessfml
