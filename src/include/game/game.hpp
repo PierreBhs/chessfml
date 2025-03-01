@@ -3,6 +3,7 @@
 #include "game/board.hpp"
 #include "game/game_state.hpp"
 #include "game/moves.hpp"
+#include "ui/main_menu.hpp"
 #include "ui/render.hpp"
 
 #include <expected>
@@ -33,6 +34,7 @@ public:
     void update_selected_tile(move_t clicked_pos);
 
 private:
+    void process_game_events(const sf::Event& event);
     void handle_mouse_click(const sf::Vector2i& mouse_pos);
     void try_select(move_t pos);
     void try_switch_selection(move_t new_pos);
@@ -58,6 +60,10 @@ private:
     selection_system m_selection{};
 
     std::vector<move_info> m_current_valid_moves;
+
+    // App state management
+    AppState m_app_state{AppState::MainMenu};
+    MainMenu m_main_menu;
 };
 
 }  // namespace chessfml

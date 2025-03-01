@@ -24,7 +24,10 @@ std::uint8_t calculate_selected_tile(int file, int rank)
 namespace chessfml {
 
 game::game()
-    : m_window(sf::VideoMode({config::game::WIDTH, config::game::HEIGHT}), "ChesSfmL"), m_renderer(m_window), m_board()
+    : m_window(sf::VideoMode({config::game::WIDTH, config::game::HEIGHT}), "ChesSfmL"),
+      m_renderer(m_window),
+      m_board(),
+      m_main_menu(m_app_state, m_window)
 {
     // m_window.setFramerateLimit(30);
     m_board.set_board_fen(config::board::fen_starting_position);
@@ -34,24 +37,81 @@ void game::run()
 {
     while (m_window.isOpen()) {
         process_events();
-        update(0.);
-        m_renderer.render(m_board);
+
+        switch (m_app_state) {
+            case AppState::MainMenu:
+                m_main_menu.update(0.0);
+                m_main_menu.render();
+                break;
+
+            case AppState::Game:
+                update(0.0);
+                m_renderer.render(m_board);
+                break;
+
+            case AppState::LoadGame:
+                // Not implemented yet, show message and return to main menu
+                m_window.clear(sf::Color(50, 50, 50));
+
+                {
+                    sf::Text loadingText(m_main_menu.get_font(), "Load Game feature coming soon...", 32);
+                    loadingText.setFillColor(sf::Color::White);
+
+                    // Center the text
+                    sf::FloatRect textBounds = loadingText.getLocalBounds();
+                    loadingText.setPosition({(m_window.getSize().x - textBounds.size.x) / 2,
+                                             (m_window.getSize().y - textBounds.size.y) / 2});
+
+                    m_window.draw(loadingText);
+                    m_window.display();
+                }
+
+                std::this_thread::sleep_for(std::chrono::seconds(2));
+                m_app_state = AppState::MainMenu;
+                break;
+
+            case AppState::Exit:
+                m_window.close();
+                break;
+        }
     }
 }
 
 void game::process_events()
 {
+
     while (const std::optional event = m_window.pollEvent()) {
         if (event->is<sf::Event::Closed>()) {
             m_window.close();
-        } else if (const auto* key_pressed = event->getIf<sf::Event::KeyPressed>()) {
-            if (key_pressed->scancode == sf::Keyboard::Scancode::Escape) {
-                m_window.close();
-            }
-        } else if (const auto* mouse_button_pressed = event->getIf<sf::Event::MouseButtonPressed>()) {
-            if (mouse_button_pressed->button == sf::Mouse::Button::Left) {
-                handle_mouse_click({mouse_button_pressed->position.x, mouse_button_pressed->position.y});
-            }
+            return;
+        }
+
+        switch (m_app_state) {
+            case AppState::MainMenu:
+                m_main_menu.process_events(*event);
+                break;
+
+            case AppState::Game:
+                process_game_events(*event);
+                break;
+
+            default:
+                break;
+        }
+    }
+}
+
+void game::process_game_events(const sf::Event& event)
+{
+    if (event.is<sf::Event::Closed>()) {
+        m_window.close();
+    } else if (const auto* key_pressed = event.getIf<sf::Event::KeyPressed>()) {
+        if (key_pressed->scancode == sf::Keyboard::Scancode::Escape) {
+            m_window.close();
+        }
+    } else if (const auto* mouse_button_pressed = event.getIf<sf::Event::MouseButtonPressed>()) {
+        if (mouse_button_pressed->button == sf::Mouse::Button::Left) {
+            handle_mouse_click({mouse_button_pressed->position.x, mouse_button_pressed->position.y});
         }
     }
 }
@@ -193,17 +253,19 @@ void game::handle_en_passant(move_t from, move_t to)
 
 void game::handle_castling(move_t from, move_t to)
 {
-    // const auto piece_color = m_board[from].get_color();
+    const auto piece_color = m_board[from].get_color();
     const bool is_kingside = to > from;
 
     if (is_kingside) {
-        const move_t rook_from = from + 3;  // King + 3 is always the rook position
-        const move_t rook_to = from + 1;    // King + 1 is the rook's final position
+        // Kingside castling: rook moves from h1/h8 to f1/f8
+        const move_t rook_from = (piece_color == piece_t::color_t::White) ? 7 : 63;
+        const move_t rook_to = (piece_color == piece_t::color_t::White) ? 5 : 61;
 
         move_piece_board(rook_from, rook_to);
     } else {
-        const move_t rook_from = from - 4;  // King - 4 is always the rook position
-        const move_t rook_to = from - 1;    // King - 1 is the rook's final position
+        // Queenside castling: rook moves from a1/a8 to d1/d8
+        const move_t rook_from = (piece_color == piece_t::color_t::White) ? 0 : 56;
+        const move_t rook_to = (piece_color == piece_t::color_t::White) ? 3 : 59;
 
         move_piece_board(rook_from, rook_to);
     }

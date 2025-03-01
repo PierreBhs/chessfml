@@ -22,6 +22,7 @@ add_executable(${PROJECT_NAME}
                 ${CMAKE_SOURCE_DIR}/src/game/moves.cpp
                 ${CMAKE_SOURCE_DIR}/src/game/game.cpp
                 ${CMAKE_SOURCE_DIR}/src/game/game_state.cpp
+                ${CMAKE_SOURCE_DIR}/src/ui/main_menu.cpp
                 ${CMAKE_SOURCE_DIR}/src/ui/render.cpp
 )
 
