@@ -70,6 +70,10 @@ void game::run()
                 m_app_state = AppState::MainMenu;
                 break;
 
+            case AppState::GameOver:
+                render_game_over();
+                break;
+
             case AppState::Exit:
                 m_window.close();
                 break;
@@ -176,18 +180,18 @@ void game::try_switch_selection(move_t new_pos)
     }
 }
 
+bool game::is_valid_selection(move_t pos) const
+{
+    return pos < 64 && m_board[pos].get_type() != piece_t::type_t::Empty &&
+           std::to_underlying(m_state.get_player_turn()) == std::to_underlying(m_board[pos].get_color());
+}
+
 void game::clear_selection()
 {
     m_selection.clear();
     m_renderer.set_selected_tile(-1);
     m_current_valid_moves.clear();
     m_renderer.set_valid_moves({});
-}
-
-bool game::is_valid_selection(move_t pos) const
-{
-    return pos < 64 && m_board[pos].get_type() != piece_t::type_t::Empty &&
-           std::to_underlying(m_state.get_player_turn()) == std::to_underlying(m_board[pos].get_color());
 }
 
 bool game::is_valid_move(move_t to) const
@@ -295,6 +299,22 @@ void game::update_game_state_after_move(move_t from, move_t to)
     m_state.next_turn();
 
     m_state.set_check(move_generator::is_in_check(m_board, m_state.get_player_turn()));
+
+    check_for_checkmate();
+}
+
+void game::check_for_checkmate()
+{
+    if (move_generator::is_checkmate(m_board, m_state)) {
+        if (m_state.get_player_turn() == game_state::player_turn::White) {
+            m_winner = WinnerType::Black;
+        } else {
+            m_winner = WinnerType::White;
+        }
+
+        m_app_state = AppState::GameOver;
+        m_game_over_start_time = std::chrono::steady_clock::now();
+    }
 }
 
 void game::move_piece_board(move_t from, move_t to)
@@ -303,6 +323,65 @@ void game::move_piece_board(move_t from, move_t to)
     m_board[to].set_pos(to);
     m_board[to].set_moved(true);
     m_board[from] = piece_t{};
+}
+
+void game::render_game_over()
+{
+    auto current_time = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(current_time - m_game_over_start_time).count();
+
+    // m_renderer.render(m_board);
+
+    sf::RectangleShape overlay({static_cast<float>(m_window.getSize().x), static_cast<float>(m_window.getSize().y)});
+    overlay.setFillColor(sf::Color(0, 0, 0, 180));  // Semi-transparent black
+    m_window.draw(overlay);
+
+    sf::Text checkmate_text(m_main_menu.get_font(), "Checkmate!", 64);
+    checkmate_text.setFillColor(sf::Color::White);
+
+    sf::FloatRect textBounds = checkmate_text.getLocalBounds();
+    checkmate_text.setPosition({(m_window.getSize().x - textBounds.size.x) / 2, m_window.getSize().y * 0.3f});
+
+    sf::Text    winner_text{m_main_menu.get_font()};
+    std::string winner_string;
+    if (m_winner == WinnerType::White) {
+        winner_string = "White wins!";
+        winner_text.setFillColor(sf::Color::White);
+    } else if (m_winner == WinnerType::Black) {
+        winner_string = "Black wins!";
+        winner_text.setFillColor(sf::Color(150, 150, 150));  // Dark gray for black
+    }
+    winner_text.setString(winner_string);
+    winner_text.setCharacterSize(48);
+
+    sf::FloatRect winnerBounds = winner_text.getLocalBounds();
+    winner_text.setPosition({(m_window.getSize().x - winnerBounds.size.x) / 2, m_window.getSize().y * 0.5f});
+
+    sf::Text countdown_text(m_main_menu.get_font(), std::format("Returning to menu in {} seconds...", 3 - elapsed), 24);
+    countdown_text.setFillColor(sf::Color(200, 200, 200));
+
+    sf::FloatRect countdownBounds = countdown_text.getLocalBounds();
+    countdown_text.setPosition({(m_window.getSize().x - countdownBounds.size.x) / 2, m_window.getSize().y * 0.7f});
+
+    // Draw all elements
+    m_window.draw(checkmate_text);
+    m_window.draw(winner_text);
+    m_window.draw(countdown_text);
+
+    m_window.display();
+
+    // Return to menu after 3 seconds
+    if (elapsed >= 3) {
+        m_app_state = AppState::MainMenu;
+
+        // Reset the game state for a new game
+        m_board = board_t{};
+        m_board.set_board_fen(config::board::fen_starting_position);
+        m_state = game_state{};
+        m_selection = selection_system{};
+        m_current_valid_moves.clear();
+        m_winner = WinnerType::None;
+    }
 }
 
 }  // namespace chessfml

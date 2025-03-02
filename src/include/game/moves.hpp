@@ -52,6 +52,7 @@ public:
     static bool                   is_legal_move(const board_t& board, const game_state& state, move_t from, move_t to);
 
     static bool is_in_check(const board_t& board, game_state::player_turn player);
+    static bool is_checkmate(const board_t& board, const game_state& state);
 
 private:
     static std::vector<move_info> get_pawn_moves(const board_t& board, const game_state& state, move_t pos);

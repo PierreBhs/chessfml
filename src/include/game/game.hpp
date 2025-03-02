@@ -23,6 +23,8 @@ private:
     std::optional<move_t> m_selected;
 };
 
+enum class WinnerType { None, White, Black };
+
 class game
 {
 public:
@@ -41,12 +43,17 @@ private:
     bool is_valid_selection(move_t pos) const;
     void clear_selection();
 
+    // End game
+    void render_game_over();
+
+    // Board check/movements
     move_t convert_to_board_pos(const sf::Vector2i& mouse_pos) const noexcept;
     bool   is_valid_move(move_t to) const;
 
     void handle_en_passant(move_t, move_t);
     void handle_castling(move_t, move_t);
     void update_game_state_after_move(move_t, move_t);
+    void check_for_checkmate();
 
     void move_piece_board(move_t, move_t);
 
@@ -62,8 +69,10 @@ private:
     std::vector<move_info> m_current_valid_moves;
 
     // App state management
-    AppState m_app_state{AppState::MainMenu};
-    MainMenu m_main_menu;
+    AppState                                           m_app_state{AppState::MainMenu};
+    MainMenu                                           m_main_menu;
+    WinnerType                                         m_winner{WinnerType::None};
+    std::chrono::time_point<std::chrono::steady_clock> m_game_over_start_time;
 };
 
 }  // namespace chessfml

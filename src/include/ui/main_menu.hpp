@@ -6,7 +6,7 @@
 
 namespace chessfml {
 
-enum class AppState { MainMenu, Game, LoadGame, Exit };
+enum class AppState { MainMenu, Game, LoadGame, GameOver, Exit };
 
 class Button
 {
