@@ -18,12 +18,20 @@ add_compile_options(-Wall -Wextra -Wpedantic -Werror -Wno-missing-field-initiali
 
 add_executable(${PROJECT_NAME}
                 ${CMAKE_SOURCE_DIR}/src/main.cpp
+                
+                ${CMAKE_SOURCE_DIR}/src/game/game.cpp
                 ${CMAKE_SOURCE_DIR}/src/game/board.cpp
                 ${CMAKE_SOURCE_DIR}/src/game/moves.cpp
-                ${CMAKE_SOURCE_DIR}/src/game/game.cpp
-                ${CMAKE_SOURCE_DIR}/src/game/game_state.cpp
-                ${CMAKE_SOURCE_DIR}/src/ui/main_menu.cpp
-                ${CMAKE_SOURCE_DIR}/src/ui/render.cpp
+                ${CMAKE_SOURCE_DIR}/src/game/game_state.cpp # Find a better name to not confuse with the states/
+                
+                ${CMAKE_SOURCE_DIR}/src/states/state_manager.cpp
+                ${CMAKE_SOURCE_DIR}/src/states/menu_state.cpp
+                ${CMAKE_SOURCE_DIR}/src/states/play_state.cpp
+                ${CMAKE_SOURCE_DIR}/src/states/load_game_state.cpp
+                ${CMAKE_SOURCE_DIR}/src/states/game_over.cpp
+
+                ${CMAKE_SOURCE_DIR}/src/ui/menu_renderer.cpp
+                ${CMAKE_SOURCE_DIR}/src/ui/board_renderer.cpp
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/src/include)
