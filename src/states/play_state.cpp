@@ -176,6 +176,14 @@ bool play_state::move_piece(move_t from, move_t to)
     return true;
 }
 
+void play_state::move_piece_board(move_t from, move_t to)
+{
+    m_board[to] = m_board[from];
+    m_board[to].set_pos(to);
+    m_board[to].set_moved(true);
+    m_board[from] = piece_t{};
+}
+
 void play_state::handle_en_passant(move_t from, move_t to)
 {
     const auto [capture_rank, capture_file] = position_to_rank_file(to);
@@ -231,31 +239,25 @@ void play_state::update_game_state_after_move(move_t from, move_t to)
 
     m_game_state.set_check(move_generator::is_in_check(m_board, m_game_state.get_player_turn()));
 
-    // Check for checkmate after the move
-    check_for_checkmate();
+    check_for_game_over();
 }
 
-void play_state::check_for_checkmate()
+void play_state::check_for_game_over()
 {
     if (move_generator::is_checkmate(m_board, m_game_state)) {
-        winner_type winner = winner_type::None;
+        winner_t winner = winner_t::None;
 
         if (m_game_state.get_player_turn() == game_state::player_turn::White) {
-            winner = winner_type::Black;
+            winner = winner_t::Black;
         } else {
-            winner = winner_type::White;
+            winner = winner_t::White;
         }
 
         m_manager->push_state<game_over_state>(m_window, m_board, winner);
+    } else if (move_generator::is_stalemate(m_board, m_game_state)) {
+        // Stalemate is a draw
+        m_manager->push_state<game_over_state>(m_window, m_board, winner_t::Draw);
     }
-}
-
-void play_state::move_piece_board(move_t from, move_t to)
-{
-    m_board[to] = m_board[from];
-    m_board[to].set_pos(to);
-    m_board[to].set_moved(true);
-    m_board[from] = piece_t{};
 }
 
 }  // namespace chessfml

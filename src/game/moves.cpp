@@ -573,4 +573,29 @@ bool move_generator::is_checkmate(const board_t& board, const game_state& state)
     return true;
 }
 
+bool move_generator::is_stalemate(const board_t& board, const game_state& state)
+{
+    const auto player_turn = state.get_player_turn();
+
+    if (is_in_check(board, player_turn)) {
+        return false;
+    }
+
+    const auto piece_color =
+        (player_turn == game_state::player_turn::White) ? piece_t::color_t::White : piece_t::color_t::Black;
+
+    for (move_t pos = 0; pos < config::board::size * config::board::size; ++pos) {
+        const auto& piece = board[pos];
+        if (piece.get_type() != piece_t::type_t::Empty && piece.get_color() == piece_color) {
+            auto legal_moves = get_legal_moves(board, state, pos);
+            if (!legal_moves.empty()) {
+                return false;
+            }
+        }
+    }
+
+    // No legal moves and not in check = stalemate
+    return true;
+}
+
 }  // namespace chessfml

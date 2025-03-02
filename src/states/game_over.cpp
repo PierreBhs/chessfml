@@ -8,7 +8,7 @@
 
 namespace chessfml {
 
-game_over_state::game_over_state(sf::RenderWindow& window, const board_t& final_board, winner_type winner)
+game_over_state::game_over_state(sf::RenderWindow& window, const board_t& final_board, winner_t winner)
     : m_window(window), m_renderer(window), m_final_board(final_board), m_winner(winner)
 {}
 
@@ -16,19 +16,29 @@ void game_over_state::init()
 {
     m_start_time = std::chrono::steady_clock::now();
 
+    if (m_winner == winner_t::Draw) {
+        m_checkmate_text = sf::Text(m_font, "Stalemate!", 64);
+    } else {
+        m_checkmate_text = sf::Text(m_font, "Checkmate!", 64);
+    }
+
     m_checkmate_text.setFillColor(sf::Color::White);
     sf::FloatRect textBounds = m_checkmate_text.getLocalBounds();
     m_checkmate_text.setPosition({(m_window.getSize().x - textBounds.size.x) / 2, m_window.getSize().y * 0.3f});
 
     std::string winner_string;
-    if (m_winner == winner_type::White) {
+    if (m_winner == winner_t::White) {
         winner_string = "White wins!";
         m_winner_text = sf::Text(m_font, winner_string, 48);
         m_winner_text.setFillColor(sf::Color::White);
-    } else if (m_winner == winner_type::Black) {
+    } else if (m_winner == winner_t::Black) {
         winner_string = "Black wins!";
         m_winner_text = sf::Text(m_font, winner_string, 48);
         m_winner_text.setFillColor(sf::Color(150, 150, 150));  // Dark gray for black
+    } else if (m_winner == winner_t::Draw) {
+        winner_string = "Draw!";
+        m_winner_text = sf::Text(m_font, winner_string, 48);
+        m_winner_text.setFillColor(sf::Color::White);
     }
 
     sf::FloatRect winnerBounds = m_winner_text.getLocalBounds();

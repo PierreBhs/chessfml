@@ -22,7 +22,7 @@ private:
     std::optional<move_t> m_selected;
 };
 
-enum class winner_type { None, White, Black };
+enum class winner_t { None, White, Black, Draw };
 
 class play_state : public state
 {
@@ -45,13 +45,13 @@ private:
     bool   is_valid_move(move_t to) const;
     bool   move_piece(move_t from, move_t to);
     move_t convert_to_board_pos(const sf::Vector2i& pos) const;
-    void   check_for_checkmate();
+    void   move_piece_board(move_t from, move_t to);
 
     // Handle special moves
     void handle_en_passant(move_t from, move_t to);
     void handle_castling(move_t from, move_t to);
     void update_game_state_after_move(move_t from, move_t to);
-    void move_piece_board(move_t from, move_t to);
+    void check_for_game_over();
 
     sf::RenderWindow& m_window;
     board_renderer    m_renderer;

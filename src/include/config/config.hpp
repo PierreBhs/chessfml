@@ -23,7 +23,7 @@ struct game
 struct board
 {
     // Using 90% of the window size to ensure it fits with margins
-    static constexpr auto BOARD_PERCENTAGE{0.9f};
+    static constexpr auto BOARD_PERCENTAGE{0.95f};
     static constexpr auto MIN_DIMENSION{static_cast<float>((game::WIDTH < game::HEIGHT) ? game::WIDTH : game::HEIGHT)};
 
     static constexpr auto size_ui{MIN_DIMENSION * BOARD_PERCENTAGE};

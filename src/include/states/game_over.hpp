@@ -7,12 +7,12 @@
 
 namespace chessfml {
 
-enum class winner_type;  // Forward declaration
+enum class winner_t;  // Forward declaration
 
 class game_over_state : public state
 {
 public:
-    game_over_state(sf::RenderWindow& window, const board_t& final_board, winner_type winner);
+    game_over_state(sf::RenderWindow& window, const board_t& final_board, winner_t winner);
     ~game_over_state() override = default;
 
     void init() override;
@@ -24,7 +24,7 @@ private:
     sf::RenderWindow&                                  m_window;
     board_renderer                                     m_renderer;
     board_t                                            m_final_board;
-    winner_type                                        m_winner;
+    winner_t                                           m_winner;
     std::chrono::time_point<std::chrono::steady_clock> m_start_time;
     float                                              m_countdown{3.0f};
 
