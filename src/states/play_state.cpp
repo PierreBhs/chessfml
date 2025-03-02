@@ -128,13 +128,16 @@ bool play_state::is_valid_move(move_t to) const
 
 move_t play_state::convert_to_board_pos(const sf::Vector2i& mouse_pos) const
 {
-    constexpr int     board_size = config::board::size;
-    const sf::Vector2 window_size = m_window.getSize();
-    const int         tile_width = window_size.x / board_size;
-    const int         tile_height = window_size.y / board_size;
+    int relative_x = mouse_pos.x - static_cast<int>(config::board::offset_x);
+    int relative_y = mouse_pos.y - static_cast<int>(config::board::offset_y);
 
-    const int file = mouse_pos.x / tile_width;
-    const int rank = (config::board::size - 1) - (mouse_pos.y / tile_height);
+    if (relative_x < 0 || relative_y < 0 || relative_x >= static_cast<int>(config::board::size_ui) ||
+        relative_y >= static_cast<int>(config::board::size_ui)) {
+        return 0xFF;  // Invalid position
+    }
+
+    const int file = relative_x / static_cast<int>(config::board::tile_size_ui);
+    const int rank = (config::board::size - 1) - (relative_y / static_cast<int>(config::board::tile_size_ui));
 
     return calculate_selected_tile(file, rank);
 }

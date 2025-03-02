@@ -16,13 +16,24 @@ size_t texture_index(chessfml::piece_t::type_t type, chessfml::piece_t::color_t 
     return color_offset + static_cast<size_t>(type) - 1;
 }
 
-sf::Vector2f tile_index_to_sfml_pos(std::uint8_t index)
+sf::Vector2f tile_to_position(std::uint8_t index)
 {
-    const unsigned x = index % chessfml::config::board::size;
-    const unsigned y = index / chessfml::config::board::size;
+    using namespace chessfml::config;
+    const unsigned x = index % board::size;
+    const unsigned y = index / board::size;
+    return {board::offset_x + x * board::tile_size_ui, board::offset_y + y * board::tile_size_ui};
+}
 
-    const float tile_size = chessfml::config::board::tile_size_ui;
-    return {x * tile_size, y * tile_size};
+sf::Vector2f tile_center(std::uint8_t index)
+{
+    using namespace chessfml::config;
+    sf::Vector2f pos = tile_to_position(index);
+    return {pos.x + board::tile_size_ui / 2.0f, pos.y + board::tile_size_ui / 2.0f};
+}
+
+float calculate_sprite_scale(float sprite_width, float target_percentage)
+{
+    return (chessfml::config::board::tile_size_ui * target_percentage) / sprite_width;
 }
 
 }  // namespace
@@ -51,17 +62,17 @@ void board_renderer::render(const board_t& board)
 
 void board_renderer::init_board()
 {
-    using config = config::board;
-    auto y_pos{config::offset_ui}, x_pos{config::offset_ui};
+    using namespace config;
+    float y_pos{board::offset_y};
 
-    for (auto y{0u}; y < 8u; ++y, y_pos += config::tile_size_ui) {
-        for (auto x{0u}; x < 8u; ++x, x_pos += config::tile_size_ui) {
+    for (auto y{0u}; y < 8u; ++y, y_pos += board::tile_size_ui) {
+        float x_pos{board::offset_x};
+        for (auto x{0u}; x < 8u; ++x, x_pos += board::tile_size_ui) {
             auto& tile = m_drawing_board[y * 8 + x];
             tile.setPosition({x_pos, y_pos});
-            tile.setSize({config::tile_size_ui, config::tile_size_ui});
-            tile.setFillColor(config::board::tile_colors[(x + y) % 2]);
+            tile.setSize({board::tile_size_ui, board::tile_size_ui});
+            tile.setFillColor(board::tile_colors[(x + y) % 2]);
         }
-        x_pos = config::offset_ui;
     }
 }
 
@@ -80,10 +91,31 @@ void board_renderer::draw_pieces(const board_t& board)
         }
 
         sf::Sprite sprite{m_pieces_texture[texture_index(piece.get_type(), piece.get_color())]};
-        sprite.setScale({0.075f, 0.075f});
-        sprite.setPosition(tile_index_to_sfml_pos(piece.get_pos()));
 
-        // glow if selected
+        // Get texture dimensions
+        const float texture_width = static_cast<float>(sprite.getTexture().getSize().x);
+        const float texture_height = static_cast<float>(sprite.getTexture().getSize().y);
+
+        // Calculate scale - use 85% of tile size for better visibility
+        const float scale_factor = calculate_sprite_scale(texture_width, 0.85f);
+
+        sprite.setScale({scale_factor, scale_factor});
+
+        // Calculate the scaled dimensions of the piece
+        const float scaled_width = texture_width * scale_factor;
+        const float scaled_height = texture_height * scale_factor;
+
+        // Get the top-left corner of the tile
+        sf::Vector2f tile_pos = tile_to_position(piece.get_pos());
+
+        // Calculate offsets to center the piece in the tile
+        const float x_offset = (config::board::tile_size_ui - scaled_width) / 2.0f;
+        const float y_offset = (config::board::tile_size_ui - scaled_height) / 2.0f;
+
+        // Set position with centering offsets
+        sprite.setPosition({tile_pos.x + x_offset, tile_pos.y + y_offset});
+
+        // Glow if selected
         if (piece.get_pos() == m_selected_tile) {
             sf::Sprite glow_sprite = sprite;
             create_glow_effect(glow_sprite);
@@ -99,9 +131,17 @@ void board_renderer::draw_possible_moves()
         return;
     }
 
-    auto tile_size = config::board::tile_size_ui;
     for (const auto& move : m_valid_moves) {
-        sf::CircleShape circle(tile_size / 5);
+        // Get the center of the tile for positioning the circle
+        sf::Vector2f center = tile_center(move.to);
+
+        // Size the circle proportionally to the tile
+        float           circle_radius = config::board::tile_size_ui / 5.0f;
+        sf::CircleShape circle(circle_radius);
+
+        // Center the circle on the tile
+        circle.setOrigin({circle_radius, circle_radius});
+        circle.setPosition(center);
 
         // Use different colors for different move types
         if (move.is_capture()) {
@@ -111,9 +151,6 @@ void board_renderer::draw_possible_moves()
         } else {
             circle.setFillColor(sf::Color{0, 0, 0, 100});  // Default
         }
-
-        auto [pos_x, pos_y] = tile_index_to_sfml_pos(move.to);
-        circle.setPosition({pos_x + tile_size / 4, pos_y + tile_size / 4});
 
         m_window.draw(circle);
     }
@@ -144,12 +181,19 @@ void board_renderer::load_pieces_textures()
 
 void board_renderer::create_glow_effect(sf::Sprite& sprite)
 {
-    const float base_scale = 0.075f;
-    const float glow_scale = base_scale * 1.2f;  // Slightly larger for glow effect
+    // Get original position and scale
+    sf::Vector2f original_position = sprite.getPosition();
+    sf::Vector2f original_scale = sprite.getScale();
 
-    sprite.setScale({glow_scale, glow_scale});
+    // Scale up slightly for glow effect
+    sprite.setScale({original_scale.x * 1.2f, original_scale.y * 1.2f});
+
+    // Adjust position to keep the piece centered with the new scale
+    float offset_x = (sprite.getGlobalBounds().size.x - original_scale.x * sprite.getTexture().getSize().x) / 2.0f;
+    float offset_y = (sprite.getGlobalBounds().size.y - original_scale.y * sprite.getTexture().getSize().y) / 2.0f;
+
+    sprite.setPosition({original_position.x - offset_x / 2.0f, original_position.y - offset_y / 2.0f});
     sprite.setColor(sf::Color(255, 255, 255, 75));  // Semi-transparent
-    sprite.move({-14.f, -14.f});
 
     m_window.draw(sprite, &m_glow_shader);
 }
