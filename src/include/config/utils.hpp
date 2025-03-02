@@ -5,17 +5,17 @@
 
 namespace chessfml {
 
-constexpr std::pair<int, int> position_to_rank_file(move_t pos)
+constexpr std::pair<int, int> position_to_rank_file(move_t pos) noexcept
 {
     return {pos / config::board::size, pos % config::board::size};
 }
 
-constexpr move_t rank_file_to_position(int rank, int file)
+constexpr move_t rank_file_to_position(int rank, int file) noexcept
 {
     return rank * config::board::size + file;
 }
 
-constexpr bool is_valid_position(move_t pos)
+constexpr bool is_valid_position(move_t pos) noexcept
 {
     return pos < config::board::size * config::board::size;
 }

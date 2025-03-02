@@ -38,10 +38,10 @@ struct move_info
 
     constexpr bool operator==(const move_info& other) const noexcept { return from == other.from && to == other.to; }
 
-    bool is_capture() const { return has_flag(type, move_type_flag ::Capture); }
-    bool is_en_passant() const { return has_flag(type, move_type_flag ::EnPassant); }
-    bool is_castling() const { return has_flag(type, move_type_flag ::Castling); }
-    bool is_promotion() const { return has_flag(type, move_type_flag ::Promotion); }
+    bool is_capture() const noexcept { return has_flag(type, move_type_flag ::Capture); }
+    bool is_en_passant() const noexcept { return has_flag(type, move_type_flag ::EnPassant); }
+    bool is_castling() const noexcept { return has_flag(type, move_type_flag ::Castling); }
+    bool is_promotion() const noexcept { return has_flag(type, move_type_flag ::Promotion); }
 };
 
 class move_generator

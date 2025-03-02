@@ -30,7 +30,7 @@ public:
     piece_t& operator=(piece_t&) = default;
     piece_t& operator=(piece_t&&) = default;
 
-    char c_type() const
+    char c_type() const noexcept
     {
         switch (m_type) {
             case type_t::Pawn:
@@ -50,15 +50,15 @@ public:
         }
     }
 
-    const type_t&  get_type() const { return m_type; }
-    const pos_t&   get_pos() const { return m_pos; }
-    const color_t& get_color() const { return m_color; }
-    bool           has_moved() const { return m_has_moved; }
+    const type_t&  get_type() const noexcept { return m_type; }
+    const pos_t&   get_pos() const noexcept { return m_pos; }
+    const color_t& get_color() const noexcept { return m_color; }
+    bool           has_moved() const noexcept { return m_has_moved; }
 
-    void set_type(type_t type) { m_type = type; }
-    void set_pos(pos_t pos) { m_pos = pos; }
-    void set_color(color_t color) { m_color = color; }
-    void set_moved(bool moved) { m_has_moved = moved; }
+    void set_type(type_t type) noexcept { m_type = type; }
+    void set_pos(pos_t pos) noexcept { m_pos = pos; }
+    void set_color(color_t color) noexcept { m_color = color; }
+    void set_moved(bool moved) noexcept { m_has_moved = moved; }
 
     void print() const { std::println("type: {} pos: {}", c_type(), get_pos()); }
 

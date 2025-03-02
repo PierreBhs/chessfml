@@ -71,7 +71,7 @@ std::vector<move_info> move_generator::get_legal_moves(const board_t& board, con
                                                                         : game_state::player_turn::Black;
 
     // Filter out moves that would leave or put the king in check
-    auto it = std::remove_if(moves.begin(), moves.end(), [&](const move_info& move) {
+    std::erase_if(moves, [&piece, &player, &board](const move_info& move) {
         board_t temp_board = board;
 
         if (move.type == move_type_flag::EnPassant) {
@@ -110,7 +110,6 @@ std::vector<move_info> move_generator::get_legal_moves(const board_t& board, con
         return is_in_check(temp_board, player);
     });
 
-    moves.erase(it, moves.end());
     return moves;
 }
 
@@ -280,14 +279,16 @@ std::vector<move_info> move_generator::get_bishop_moves(const board_t& board, mo
 std::vector<move_info> move_generator::get_queen_moves(const board_t& board, move_t pos)
 {
     // Queen moves are a combination of rook and bishop moves
-    auto rook_moves = get_rook_moves(board, pos);
-    auto bishop_moves = get_bishop_moves(board, pos);
+    const auto rook_moves = get_rook_moves(board, pos);
+    const auto bishop_moves = get_bishop_moves(board, pos);
 
     std::vector<move_info> queen_moves;
     queen_moves.reserve(rook_moves.size() + bishop_moves.size());
 
-    queen_moves.insert(queen_moves.end(), rook_moves.begin(), rook_moves.end());
-    queen_moves.insert(queen_moves.end(), bishop_moves.begin(), bishop_moves.end());
+    queen_moves.insert(
+        queen_moves.end(), std::make_move_iterator(rook_moves.begin()), std::make_move_iterator(rook_moves.end()));
+    queen_moves.insert(
+        queen_moves.end(), std::make_move_iterator(bishop_moves.begin()), std::make_move_iterator(bishop_moves.end()));
 
     return queen_moves;
 }

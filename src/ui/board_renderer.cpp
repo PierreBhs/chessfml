@@ -80,15 +80,12 @@ void board_renderer::draw_pieces(const board_t& board)
         }
 
         sf::Sprite sprite{m_pieces_texture[texture_index(piece.get_type(), piece.get_color())]};
-
         sprite.setScale({0.075f, 0.075f});
         sprite.setPosition(tile_index_to_sfml_pos(piece.get_pos()));
 
         // glow if selected
         if (piece.get_pos() == m_selected_tile) {
-            sf::Sprite glow_sprite(m_pieces_texture[texture_index(piece.get_type(), piece.get_color())]);
-            glow_sprite.setScale({0.075f, 0.075f});
-            glow_sprite.setPosition(tile_index_to_sfml_pos(piece.get_pos()));
+            sf::Sprite glow_sprite = sprite;
             create_glow_effect(glow_sprite);
         }
 

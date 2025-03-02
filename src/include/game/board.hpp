@@ -15,8 +15,8 @@ public:
     void                                       set_board_fen(std::string_view fen);
     void                                       print() const;
 
-    auto begin() const { return m_board.begin(); }
-    auto end() const { return m_board.end(); }
+    auto begin() const noexcept { return m_board.begin(); }
+    auto end() const noexcept { return m_board.end(); }
     // auto cbegin() const { return m_board.cbegin(); }
     // auto cend() const { return m_board.cend(); }
 

@@ -5,7 +5,7 @@ namespace chessfml {
 std::expected<std::string_view, fen_error> board_t::fen_to_board(std::string_view fen)
 {
     std::uint8_t index{0u};
-    for (char c : fen) {
+    for (const auto c : fen) {
         if (index >= 64) {
             break;
         }
