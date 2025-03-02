@@ -1,7 +1,7 @@
 #include "states/play_state.hpp"
 
-#include "config/config.hpp"
-#include "config/utils.hpp"
+#include "common/config.hpp"
+#include "common/utils.hpp"
 #include "states/game_over.hpp"
 #include "states/state_manager.hpp"
 

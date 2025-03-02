@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <optional>
 
-#include "config/config.hpp"
+#include "common/config.hpp"
 
 namespace chessfml {
 

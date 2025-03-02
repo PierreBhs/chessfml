@@ -1,6 +1,6 @@
 #include "ui/menu_renderer.hpp"
 
-#include "config/config.hpp"
+#include "common/config.hpp"
 
 namespace chessfml {
 

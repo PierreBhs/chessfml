@@ -1,5 +1,7 @@
 #include "game/board.hpp"
 
+#include "common/config.hpp"
+
 namespace chessfml {
 
 std::expected<std::string_view, fen_error> board_t::fen_to_board(std::string_view fen)

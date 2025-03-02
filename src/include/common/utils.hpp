@@ -1,7 +1,7 @@
 #pragma once
 
 #include <utility>
-#include "config/config.hpp"
+#include "common/config.hpp"
 
 namespace chessfml {
 

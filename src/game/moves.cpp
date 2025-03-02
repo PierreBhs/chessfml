@@ -2,8 +2,8 @@
 
 #include <algorithm>
 #include <array>
-#include "config/config.hpp"
-#include "config/utils.hpp"
+#include "common/config.hpp"
+#include "common/utils.hpp"
 
 namespace {
 
@@ -141,6 +141,47 @@ std::vector<move_info> move_generator::get_pseudo_legal_moves(const board_t& boa
         default:
             return {};
     }
+}
+
+bool move_generator::is_in_check(const board_t& board, game_state::player_turn player)
+{
+    const auto king_color =
+        (player == game_state::player_turn::White) ? piece_t::color_t::White : piece_t::color_t::Black;
+
+    move_t king_pos = 0xFF;  // Invalid position
+
+    for (move_t i = 0; i < config::board::size * config::board::size; ++i) {
+        const auto& piece = board[i];
+        if (piece.get_type() == piece_t::type_t::King && piece.get_color() == king_color) {
+            king_pos = i;
+            break;
+        }
+    }
+
+    if (king_pos == 0xFF) {
+        // King not found (shouldn't happen in a valid board)
+        return false;
+    }
+
+    // Check if the king is attacked
+    return is_square_attacked(
+        board,
+        king_pos,
+        (player == game_state::player_turn::White) ? game_state::player_turn::Black : game_state::player_turn::White);
+}
+
+bool move_generator::is_checkmate(const board_t& board, const game_state& state)
+{
+    const auto player_turn = state.get_player_turn();
+
+    return is_in_check(board, player_turn) && !has_legal_moves(board, state);
+}
+
+bool move_generator::is_stalemate(const board_t& board, const game_state& state)
+{
+    const auto player_turn = state.get_player_turn();
+
+    return !is_in_check(board, player_turn) && !has_legal_moves(board, state);
 }
 
 std::vector<move_info> move_generator::get_pawn_moves(const board_t& board, const game_state& state, move_t pos)
@@ -521,42 +562,9 @@ bool move_generator::is_square_attacked(const board_t& board, move_t square, gam
     return false;
 }
 
-bool move_generator::is_in_check(const board_t& board, game_state::player_turn player)
-{
-    const auto king_color =
-        (player == game_state::player_turn::White) ? piece_t::color_t::White : piece_t::color_t::Black;
-
-    // Find the king
-    move_t king_pos = 0xFF;  // Invalid position
-
-    for (move_t i = 0; i < config::board::size * config::board::size; ++i) {
-        const auto& piece = board[i];
-        if (piece.get_type() == piece_t::type_t::King && piece.get_color() == king_color) {
-            king_pos = i;
-            break;
-        }
-    }
-
-    if (king_pos == 0xFF) {
-        // King not found (shouldn't happen in a valid board)
-        return false;
-    }
-
-    // Check if the king is attacked
-    return is_square_attacked(
-        board,
-        king_pos,
-        (player == game_state::player_turn::White) ? game_state::player_turn::Black : game_state::player_turn::White);
-}
-
-bool move_generator::is_checkmate(const board_t& board, const game_state& state)
+bool move_generator::has_legal_moves(const board_t& board, const game_state& state)
 {
     const auto player_turn = state.get_player_turn();
-
-    if (!is_in_check(board, player_turn)) {
-        return false;
-    }
-
     const auto piece_color =
         (player_turn == game_state::player_turn::White) ? piece_t::color_t::White : piece_t::color_t::Black;
 
@@ -565,37 +573,12 @@ bool move_generator::is_checkmate(const board_t& board, const game_state& state)
         if (piece.get_type() != piece_t::type_t::Empty && piece.get_color() == piece_color) {
             auto legal_moves = get_legal_moves(board, state, pos);
             if (!legal_moves.empty()) {
-                return false;
+                return true;
             }
         }
     }
 
-    return true;
-}
-
-bool move_generator::is_stalemate(const board_t& board, const game_state& state)
-{
-    const auto player_turn = state.get_player_turn();
-
-    if (is_in_check(board, player_turn)) {
-        return false;
-    }
-
-    const auto piece_color =
-        (player_turn == game_state::player_turn::White) ? piece_t::color_t::White : piece_t::color_t::Black;
-
-    for (move_t pos = 0; pos < config::board::size * config::board::size; ++pos) {
-        const auto& piece = board[pos];
-        if (piece.get_type() != piece_t::type_t::Empty && piece.get_color() == piece_color) {
-            auto legal_moves = get_legal_moves(board, state, pos);
-            if (!legal_moves.empty()) {
-                return false;
-            }
-        }
-    }
-
-    // No legal moves and not in check = stalemate
-    return true;
+    return false;
 }
 
 }  // namespace chessfml

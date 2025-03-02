@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#include "config/config.hpp"
+#include "common/config.hpp"
 #include "game/board.hpp"
 #include "game/game_state.hpp"
 
@@ -64,6 +64,7 @@ private:
     static std::vector<move_info> get_king_moves(const board_t& board, const game_state& state, move_t pos);
 
     static bool is_square_attacked(const board_t& board, move_t square, game_state::player_turn attacker);
+    static bool has_legal_moves(const board_t& board, const game_state& state);
 };
 
 }  // namespace chessfml

@@ -1,6 +1,6 @@
 #include "ui/board_renderer.hpp"
 
-#include "config/config.hpp"
+#include "common/config.hpp"
 #include "game/piece.hpp"
 
 #include <SFML/Graphics/CircleShape.hpp>

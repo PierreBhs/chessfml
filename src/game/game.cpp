@@ -1,6 +1,6 @@
 #include "game/game.hpp"
 
-#include "config/config.hpp"
+#include "common/config.hpp"
 #include "states/menu_state.hpp"
 
 namespace chessfml {
