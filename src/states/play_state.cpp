@@ -24,7 +24,7 @@ std::uint8_t calculate_selected_tile(int file, int rank)
 
 namespace chessfml {
 
-play_state::play_state(sf::RenderWindow& window) : m_window(window), m_renderer(window) {}
+play_state::play_state(sf::RenderWindow& window) : m_window(window), m_renderer(window), m_board(), m_game_state() {}
 
 play_state::play_state(sf::RenderWindow& window, const board_t& board, const game_state& state)
     : m_window(window), m_renderer(window), m_board(board), m_game_state(state)
