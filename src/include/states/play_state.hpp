@@ -28,6 +28,9 @@ class play_state : public state
 {
 public:
     play_state(sf::RenderWindow& window);
+    // loading a game from FEN
+    play_state(sf::RenderWindow& window, const board_t& board, const game_state& state);
+
     ~play_state() override = default;
 
     void init() override;

@@ -11,6 +11,8 @@
 #include <chrono>
 #include <thread>
 
+#include <print>
+
 namespace {
 
 std::uint8_t calculate_selected_tile(int file, int rank)
@@ -24,9 +26,29 @@ namespace chessfml {
 
 play_state::play_state(sf::RenderWindow& window) : m_window(window), m_renderer(window) {}
 
+play_state::play_state(sf::RenderWindow& window, const board_t& board, const game_state& state)
+    : m_window(window), m_renderer(window), m_board(board), m_game_state(state)
+{}
+
 void play_state::init()
 {
-    m_board.set_board_fen(config::board::fen_starting_position);
+    // Only initialize the board if it's empty (not loaded from FEN)
+    bool is_board_empty = true;
+    for (const auto& piece : m_board) {
+        piece.print();
+        if (piece.get_type() != piece_t::type_t::Empty) {
+            is_board_empty = false;
+            break;
+        }
+    }
+
+    std::println("is_board_empty: {}", is_board_empty);
+
+    if (is_board_empty) {
+        m_board.set_board_fen(config::board::fen_starting_position);
+    }
+
+    m_game_state.set_check(move_generator::is_in_check(m_board, m_game_state.get_player_turn()));
 }
 
 void play_state::handle_event(const sf::Event& event)
@@ -44,7 +66,6 @@ void play_state::handle_event(const sf::Event& event)
 
 void play_state::update([[maybe_unused]] float dt)
 {
-    // Nothing to update in regular gameplay, just a slight delay for smoother animation
     std::this_thread::sleep_for(std::chrono::milliseconds{30});
 }
 

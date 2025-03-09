@@ -32,6 +32,8 @@ add_executable(${PROJECT_NAME}
 
                 ${CMAKE_SOURCE_DIR}/src/ui/menu_renderer.cpp
                 ${CMAKE_SOURCE_DIR}/src/ui/board_renderer.cpp
+                
+                ${CMAKE_SOURCE_DIR}/src/common/fen.cpp
 )
 
 include_directories(${CMAKE_SOURCE_DIR}/src/include)
