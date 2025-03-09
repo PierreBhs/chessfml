@@ -79,6 +79,13 @@ private:
     bool                   m_cursor_visible = true;
     float                  m_cursor_blink_timer = 0.0f;
     static constexpr float m_cursor_blink_interval = 0.5f;
+    size_t                 m_cursor_position = 0;
+    bool                   m_is_dragging = false;
+    sf::Clock              m_cursor_clock;  // For cursor blinking
+
+    bool   m_text_selected = false;
+    size_t m_selection_start = 0;
+    size_t m_selection_end = 0;
 
     // Game preview
     board_t     m_preview_board;

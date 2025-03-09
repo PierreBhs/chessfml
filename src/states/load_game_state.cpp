@@ -169,40 +169,57 @@ void load_game_state::create_ui_components()
 
 void load_game_state::handle_event(const sf::Event& event)
 {
-    // MouseMoved event
-    if (event.is<sf::Event::MouseMoved>()) {
-        update_component_states();
+    if (const auto* key_event = event.getIf<sf::Event::KeyPressed>()) {
+        if (key_event->code == sf::Keyboard::Key::V && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl)) {
+            if (m_components[static_cast<size_t>(ui_component::FenInput)].active) {
+                std::string clipboard = sf::Clipboard::getString().toAnsiString();
+                if (!clipboard.empty()) {
+                    m_fen_string.insert(m_cursor_position, clipboard);
+                    m_cursor_position += clipboard.length();
+                    m_components[static_cast<size_t>(ui_component::FenInput)].text.setString(m_fen_string);
+                }
+                return;
+            }
+        }
+        // Select all text shortcut (Ctrl+A)
+        else if (key_event->code == sf::Keyboard::Key::A && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl)) {
+            if (m_components[static_cast<size_t>(ui_component::FenInput)].active) {
+                // Select all text
+                m_text_selected = true;
+                m_selection_start = 0;
+                m_selection_end = m_fen_string.length();
+                m_cursor_position = m_fen_string.length();
+                return;
+            }
+        }
     }
 
-    // MouseButtonPressed event
-    else if (const auto* mouse_pressed = event.getIf<sf::Event::MouseButtonPressed>()) {
+    if (event.is<sf::Event::MouseMoved>()) {
+        update_component_states();
+    } else if (const auto* mouse_pressed = event.getIf<sf::Event::MouseButtonPressed>()) {
         if (mouse_pressed->button == sf::Mouse::Button::Left) {
             handle_mouse_click(
                 {static_cast<float>(mouse_pressed->position.x), static_cast<float>(mouse_pressed->position.y)});
         }
-    }
-
-    // TextEntered event
-    else if (const auto* text_entered = event.getIf<sf::Event::TextEntered>()) {
+    } else if (const auto* text_entered = event.getIf<sf::Event::TextEntered>()) {
         if (m_current_method == load_method::Direct &&
-            m_components[static_cast<size_t>(ui_component::FenInput)].active) {
-            handle_text_input(*text_entered);
-        }
-    }
+            m_components[static_cast<size_t>(ui_component::FenInput)].active && text_entered->unicode >= 32 &&
+            text_entered->unicode < 128) {
 
-    // KeyPressed event
-    else if (const auto* key_pressed = event.getIf<sf::Event::KeyPressed>()) {
+            m_fen_string.insert(m_cursor_position, 1, static_cast<char>(text_entered->unicode));
+            m_cursor_position++;
+            m_components[static_cast<size_t>(ui_component::FenInput)].text.setString(m_fen_string);
+        }
+    } else if (const auto* key_pressed = event.getIf<sf::Event::KeyPressed>()) {
         handle_key_pressed(*key_pressed);
     }
 }
 
-void load_game_state::update(float dt)
+void load_game_state::update([[maybe_unused]] float dt)
 {
-    // Update cursor blink
-    m_cursor_blink_timer += dt;
-    if (m_cursor_blink_timer >= m_cursor_blink_interval) {
-        m_cursor_blink_timer -= m_cursor_blink_interval;
+    if (m_cursor_clock.getElapsedTime().asSeconds() >= m_cursor_blink_interval) {
         m_cursor_visible = !m_cursor_visible;
+        m_cursor_clock.restart();
     }
 
     // Check for file dialog result
@@ -282,19 +299,6 @@ void load_game_state::render()
         }
 
         m_window.draw(component.text);
-
-        // Draw cursor for FEN input field if active
-        if (&component == &m_components[static_cast<size_t>(ui_component::FenInput)] && component.active &&
-            m_cursor_visible) {
-            sf::Text      cursor_text = component.text;
-            sf::FloatRect bounds = cursor_text.getLocalBounds();
-
-            sf::RectangleShape cursor;
-            cursor.setSize({2.0f, 24.0f});
-            cursor.setFillColor(sf::Color::Black);
-            cursor.setPosition({component.text.getPosition().x + bounds.size.x + 2.0f, component.text.getPosition().y});
-            m_window.draw(cursor);
-        }
     }
 
     // Draw validation message
@@ -303,6 +307,42 @@ void load_game_state::render()
     validation_text.setPosition(
         {static_cast<float>(config::game::WIDTH) * 0.15f, static_cast<float>(config::game::HEIGHT) * 0.6f});
     m_window.draw(validation_text);
+
+    if (m_text_selected && m_components[static_cast<size_t>(ui_component::FenInput)].active) {
+        auto&     fen_input = m_components[static_cast<size_t>(ui_component::FenInput)];
+        sf::Text& text = fen_input.text;
+        sf::Text  start_text = text;
+        start_text.setString(m_fen_string.substr(0, m_selection_start));
+
+        sf::Text selected_text = text;
+        selected_text.setString(m_fen_string.substr(m_selection_start, m_selection_end - m_selection_start));
+
+        float start_x = text.getPosition().x + start_text.getGlobalBounds().size.x;
+        float selection_width = selected_text.getGlobalBounds().size.x;
+
+        sf::RectangleShape selection;
+        selection.setPosition({start_x, text.getPosition().y});
+        selection.setSize({selection_width, static_cast<float>(text.getCharacterSize())});
+        selection.setFillColor(sf::Color(0, 120, 215, 128));  // Semi-transparent blue
+
+        m_window.draw(selection);
+    }
+
+    if (m_components[static_cast<size_t>(ui_component::FenInput)].active && m_cursor_visible) {
+        auto& fen_input = m_components[static_cast<size_t>(ui_component::FenInput)];
+
+        sf::Text& text = fen_input.text;
+        sf::Text  cursor_pos_text = text;
+        cursor_pos_text.setString(m_fen_string.substr(0, m_cursor_position));
+
+        float cursor_x = text.getPosition().x + cursor_pos_text.getGlobalBounds().size.x;
+
+        sf::RectangleShape cursor;
+        cursor.setSize({2.0f, static_cast<float>(text.getCharacterSize() + 4)});
+        cursor.setFillColor(sf::Color::Black);
+        cursor.setPosition({cursor_x, text.getPosition().y - 2.0f});
+        m_window.draw(cursor);
+    }
 }
 
 void load_game_state::update_component_states()
@@ -354,6 +394,29 @@ bool load_game_state::is_point_in_component(const sf::Vector2f& point, ui_compon
 
 void load_game_state::handle_mouse_click(const sf::Vector2f& pos)
 {
+    auto& fen_input = m_components[static_cast<size_t>(ui_component::FenInput)];
+
+    if (fen_input.background.getGlobalBounds().contains(pos)) {
+        fen_input.active = true;
+
+        sf::Text& text = fen_input.text;
+        float     text_x = pos.x - text.getPosition().x;
+
+        float text_width = text.getGlobalBounds().size.x;
+        float avg_char_width = text_width / static_cast<float>(m_fen_string.length() > 0 ? m_fen_string.length() : 1);
+
+        m_cursor_position = static_cast<size_t>(text_x / avg_char_width);
+
+        if (m_cursor_position > m_fen_string.length()) {
+            m_cursor_position = m_fen_string.length();
+        }
+
+        m_cursor_clock.restart();
+        m_cursor_visible = true;
+
+        return;
+    }
+
     for (size_t i = 0; i < m_components.size(); ++i) {
         ui_component comp_type = static_cast<ui_component>(i);
 
@@ -414,9 +477,17 @@ void load_game_state::handle_mouse_click(const sf::Vector2f& pos)
 
 void load_game_state::handle_text_input(const sf::Event::TextEntered& text)
 {
-    // Only handle standard ASCII characters
-    if (text.unicode < 128 && text.unicode != '\b' && text.unicode != '\r' && text.unicode != '\n') {
-        m_fen_string += static_cast<char>(text.unicode);
+    if (m_current_method == load_method::Direct && m_components[static_cast<size_t>(ui_component::FenInput)].active &&
+        text.unicode >= 32 && text.unicode < 128) {
+
+        if (m_text_selected) {
+            m_fen_string.erase(m_selection_start, m_selection_end - m_selection_start);
+            m_cursor_position = m_selection_start;
+            m_text_selected = false;
+        }
+
+        m_fen_string.insert(m_cursor_position, 1, static_cast<char>(text.unicode));
+        m_cursor_position++;
         m_components[static_cast<size_t>(ui_component::FenInput)].text.setString(m_fen_string);
     }
 }
@@ -429,9 +500,39 @@ void load_game_state::handle_key_pressed(const sf::Event::KeyPressed& key)
     }
 
     if (m_components[static_cast<size_t>(ui_component::FenInput)].active) {
-        if (key.code == sf::Keyboard::Key::Backspace && !m_fen_string.empty()) {
-            m_fen_string.pop_back();
-            m_components[static_cast<size_t>(ui_component::FenInput)].text.setString(m_fen_string);
+        if (key.code == sf::Keyboard::Key::Backspace) {
+            if (m_text_selected) {
+                // Delete selected text
+                m_fen_string.erase(m_selection_start, m_selection_end - m_selection_start);
+                m_cursor_position = m_selection_start;
+                m_text_selected = false;
+                m_components[static_cast<size_t>(ui_component::FenInput)].text.setString(m_fen_string);
+            } else if (!m_fen_string.empty() && m_cursor_position > 0) {
+                // Delete character before cursor
+                m_fen_string.erase(m_cursor_position - 1, 1);
+                m_cursor_position--;
+                m_components[static_cast<size_t>(ui_component::FenInput)].text.setString(m_fen_string);
+            }
+        } else if (key.code == sf::Keyboard::Key::Delete) {
+            if (m_text_selected) {
+                // Delete selected text
+                m_fen_string.erase(m_selection_start, m_selection_end - m_selection_start);
+                m_cursor_position = m_selection_start;
+                m_text_selected = false;
+                m_components[static_cast<size_t>(ui_component::FenInput)].text.setString(m_fen_string);
+            } else if (m_cursor_position < m_fen_string.length()) {
+                // Delete character at cursor
+                m_fen_string.erase(m_cursor_position, 1);
+                m_components[static_cast<size_t>(ui_component::FenInput)].text.setString(m_fen_string);
+            }
+        } else if (key.code == sf::Keyboard::Key::Left && m_cursor_position > 0) {
+            m_cursor_position--;
+        } else if (key.code == sf::Keyboard::Key::Right && m_cursor_position < m_fen_string.length()) {
+            m_cursor_position++;
+        } else if (key.code == sf::Keyboard::Key::Home) {
+            m_cursor_position = 0;
+        } else if (key.code == sf::Keyboard::Key::End) {
+            m_cursor_position = m_fen_string.length();
         } else if (key.code == sf::Keyboard::Key::Enter) {
             validate_fen();
         }
@@ -475,8 +576,6 @@ void load_game_state::validate_fen()
     if (!error) {
         m_fen_valid = true;
         m_validation_message = "FEN is valid!";
-
-        // Update preview
         m_preview_board = test_board;
         m_preview_state = test_state;
     } else {
