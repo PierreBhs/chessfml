@@ -32,17 +32,8 @@ play_state::play_state(sf::RenderWindow& window, const board_t& board, const gam
 
 void play_state::init()
 {
-    // Only initialize the board if it's empty (not loaded from FEN)
-    bool is_board_empty = true;
-    for (const auto& piece : m_board) {
-        piece.print();
-        if (piece.get_type() != piece_t::type_t::Empty) {
-            is_board_empty = false;
-            break;
-        }
-    }
-
-    std::println("is_board_empty: {}", is_board_empty);
+    bool is_board_empty = std::all_of(
+        m_board.begin(), m_board.end(), [](const auto& piece) { return piece.get_type() == piece_t::type_t::Empty; });
 
     if (is_board_empty) {
         m_board.set_board_fen(config::board::fen_starting_position);

@@ -17,6 +17,8 @@ public:
 
     template <typename T, typename... Args>
     void push_state(Args&&... args);
+    template <typename T, typename... Args>
+    void replace_state(Args&&... args);
 
     void pop_state();
     void pop_states(int count);
@@ -46,6 +48,20 @@ void state_manager::push_state(Args&&... args)
     }
 
     m_states.push(std::move(state));
+}
+
+template <typename T, typename... Args>
+void state_manager::replace_state(Args&&... args)
+{
+    auto new_state = std::make_unique<T>(std::forward<Args>(args)...);
+    new_state->set_manager(this);
+
+    if (!m_states.empty()) {
+        m_states.pop();
+    }
+
+    new_state->init();
+    m_states.push(std::move(new_state));
 }
 
 }  // namespace chessfml

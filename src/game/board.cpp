@@ -69,8 +69,14 @@ std::expected<std::string_view, fen_error> board_t::fen_to_board(std::string_vie
 
 void board_t::set_board_fen(std::string_view fen)
 {
-    std::println("SETTING FEN BOARD");
-    fen_to_board(fen).value_or(config::board::fen_starting_position);
+    auto result = fen_to_board(fen);
+    if (!result) {
+        std::println("Error parsing FEN: {}", static_cast<int>(result.error()));
+        auto start_result = fen_to_board(config::board::fen_starting_position);
+        if (!start_result) {
+            std::println("Error setting default board position: {}", static_cast<int>(start_result.error()));
+        }
+    }
 }
 
 void board_t::print() const

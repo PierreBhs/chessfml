@@ -460,8 +460,7 @@ void load_game_state::attempt_load_game()
         new_state.set_player_turn(game_state::player_turn::Black);
     }
 
-    m_manager->pop_state();
-    m_manager->push_state<play_state>(m_window, new_board, new_state);
+    m_manager->replace_state<play_state>(m_window, new_board, new_state);
 }
 
 void load_game_state::validate_fen()
