@@ -36,7 +36,6 @@ cmake --build build
 * src/ui/ - Rendering and user interface components
 * src/common/ - Utilities and common functionality
 
-  
 
-https://github.com/user-attachments/assets/2179231d-e726-45f9-ae4d-0661d20a31a9
+https://github.com/user-attachments/assets/50bc4875-3ddc-4920-a583-4824a8c882bb
 
