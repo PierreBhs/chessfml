@@ -37,7 +37,7 @@ struct board
 
     static constexpr auto size{8};
 
-    static constexpr std::string_view fen_starting_position{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"};
+    static constexpr std::string_view fen_starting_position{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
 };
 
 }  // namespace chessfml::config
