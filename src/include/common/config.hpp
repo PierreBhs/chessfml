@@ -1,11 +1,12 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+#include <cstdint>
 #include <string_view>
 
 namespace chessfml {
 
-using move_t = int;
+using move_t = std::uint8_t;
 
 }
 

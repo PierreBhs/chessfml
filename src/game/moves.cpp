@@ -376,7 +376,7 @@ std::vector<move_info> move_generator::get_king_moves(const board_t& board, cons
     if (!king.has_moved() && !state.is_check()) {
         if (state.can_castle_kingside(player)) {
             const move_t rook_pos = (king_color == piece_t::color_t::White) ? 7 : 63;
-            const move_t king_path[] = {pos + 1, pos + 2};
+            const move_t king_path[] = {static_cast<move_t>(pos + 1), static_cast<move_t>(pos + 2)};
 
             bool path_clear = true;
 
@@ -406,15 +406,16 @@ std::vector<move_info> move_generator::get_king_moves(const board_t& board, cons
             if (path_clear && board[rook_pos].get_type() == piece_t::type_t::Rook &&
                 board[rook_pos].get_color() == king_color && !board[rook_pos].has_moved()) {
 
-                moves.push_back({.from = pos, .to = pos + 2, .type = move_type_flag::Castling});
+                moves.push_back({.from = pos, .to = static_cast<move_t>(pos + 2), .type = move_type_flag::Castling});
             }
         }
 
         // Queenside castling
         if (state.can_castle_queenside(player)) {
             const move_t rook_pos = (king_color == piece_t::color_t::White) ? 0 : 56;
-            const move_t king_path[] = {pos - 1, pos - 2};
-            const move_t full_path[] = {pos - 1, pos - 2, pos - 3};  // Include b1/b8 square
+            const move_t king_path[] = {static_cast<move_t>(pos - 1), static_cast<move_t>(pos - 2)};
+            const move_t full_path[] = {
+                static_cast<move_t>(pos - 1), static_cast<move_t>(pos - 2), static_cast<move_t>(pos - 3)};
 
             bool path_clear = true;
 
@@ -444,7 +445,7 @@ std::vector<move_info> move_generator::get_king_moves(const board_t& board, cons
             if (path_clear && board[rook_pos].get_type() == piece_t::type_t::Rook &&
                 board[rook_pos].get_color() == king_color && !board[rook_pos].has_moved()) {
 
-                moves.push_back({.from = pos, .to = pos - 2, .type = move_type_flag::Castling});
+                moves.push_back({.from = pos, .to = static_cast<move_t>(pos - 2), .type = move_type_flag::Castling});
             }
         }
     }
