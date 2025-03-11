@@ -1,9 +1,8 @@
 #include <thread>
 #include "states/menu_state.hpp"
 
+#include "states/game_selection_state.hpp"
 #include "states/load_game_state.hpp"
-#include "states/play_state.hpp"
-
 #include "states/state_manager.hpp"
 
 namespace chessfml {
@@ -54,7 +53,7 @@ void menu_state::activate_selected_option()
 {
     switch (static_cast<menu_option>(m_selected_option)) {
         case menu_option::Play:
-            m_manager->push_state<play_state>(m_window);
+            m_manager->push_state<game_selection_state>(m_window);
             break;
         case menu_option::LoadGame:
             m_manager->push_state<load_game_state>(m_window);

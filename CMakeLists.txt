@@ -29,6 +29,7 @@ add_executable(${PROJECT_NAME}
                 ${CMAKE_SOURCE_DIR}/src/states/play_state.cpp
                 ${CMAKE_SOURCE_DIR}/src/states/load_game_state.cpp
                 ${CMAKE_SOURCE_DIR}/src/states/game_over.cpp
+                ${CMAKE_SOURCE_DIR}/src/states/game_selection_state.cpp
 
                 ${CMAKE_SOURCE_DIR}/src/ui/menu_renderer.cpp
                 ${CMAKE_SOURCE_DIR}/src/ui/board_renderer.cpp

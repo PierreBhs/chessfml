@@ -9,6 +9,7 @@
 #include <SFML/Window/Mouse.hpp>
 #include <algorithm>
 #include <chrono>
+#include <random>
 #include <thread>
 
 #include <print>
@@ -24,10 +25,26 @@ std::uint8_t calculate_selected_tile(int file, int rank)
 
 namespace chessfml {
 
-play_state::play_state(sf::RenderWindow& window) : m_window(window), m_renderer(window), m_board(), m_game_state() {}
+play_state::play_state(sf::RenderWindow& window, player_t white_player, player_t black_player)
+    : m_window(window),
+      m_renderer(window),
+      m_board(),
+      m_game_state(),
+      m_white_player(white_player),
+      m_black_player(black_player)
+{}
 
-play_state::play_state(sf::RenderWindow& window, const board_t& board, const game_state& state)
-    : m_window(window), m_renderer(window), m_board(board), m_game_state(state)
+play_state::play_state(sf::RenderWindow& window,
+                       const board_t&    board,
+                       const game_state& state,
+                       player_t          white_player,
+                       player_t          black_player)
+    : m_window(window),
+      m_renderer(window),
+      m_board(board),
+      m_game_state(state),
+      m_white_player(white_player),
+      m_black_player(black_player)
 {}
 
 void play_state::init()
@@ -40,35 +57,159 @@ void play_state::init()
     }
 
     m_game_state.set_check(move_generator::is_in_check(m_board, m_game_state.get_player_turn()));
+
+    // Lock the board if AI plays as white (needs to make first move)
+    m_board_locked = m_game_state.get_player_turn() == game_state::player_turn::White && m_white_player == player_t::AI;
+    m_waiting_for_ai_move = m_board_locked;
 }
 
 void play_state::handle_event(const sf::Event& event)
 {
+    // Always handle escape key to exit
     if (const auto* key_pressed = event.getIf<sf::Event::KeyPressed>()) {
         if (key_pressed->scancode == sf::Keyboard::Scancode::Escape) {
             m_manager->pop_state();  // Return to menu
+            return;
         }
-    } else if (const auto* mouse_button_pressed = event.getIf<sf::Event::MouseButtonPressed>()) {
+    }
+
+    // Skip other input handling if board is locked (AI is thinking or moving)
+    if (m_board_locked) {
+        return;
+    }
+
+    // Handle mouse clicks for human players
+    if (const auto* mouse_button_pressed = event.getIf<sf::Event::MouseButtonPressed>()) {
         if (mouse_button_pressed->button == sf::Mouse::Button::Left) {
             handle_mouse_click({mouse_button_pressed->position.x, mouse_button_pressed->position.y});
         }
     }
 }
 
-void play_state::update([[maybe_unused]] float dt)
+void play_state::update(float dt)
 {
+    if (is_current_player_ai()) {
+        handle_ai_turn(dt);
+    } else {
+        m_waiting_for_ai_move = false;
+        m_board_locked = false;
+    }
+
     std::this_thread::sleep_for(std::chrono::milliseconds{30});
 }
 
 void play_state::render()
 {
     m_renderer.render(m_board);
+
+    // Make singleton Font ? Too many sf::Font object created for the same font
+    static const sf::Font font{"data/fonts/Montserrat-Regular.ttf"};
+
+    sf::Text turn_indicator{font};
+    turn_indicator.setFont(font);
+    turn_indicator.setCharacterSize(24);
+    turn_indicator.setPosition({20, 20});
+
+    const auto current_player = m_game_state.get_player_turn();
+    const bool is_ai = is_current_player_ai();
+
+    std::string turn_text = std::string(current_player == game_state::player_turn::White ? "White" : "Black") +
+                            "'s turn (" + (is_ai ? "AI" : "Human") + ")";
+
+    turn_indicator.setString(turn_text);
+    turn_indicator.setFillColor(sf::Color::White);
+
+    sf::Text shadow = turn_indicator;
+    shadow.setFillColor(sf::Color::Black);
+    shadow.setPosition(turn_indicator.getPosition() + sf::Vector2f(2, 2));
+
+    m_window.draw(shadow);
+    m_window.draw(turn_indicator);
+
+    if (m_waiting_for_ai_move) {
+        sf::Text thinking_text{font};
+        thinking_text.setCharacterSize(20);
+        thinking_text.setString("AI is thinking...");
+        thinking_text.setFillColor(sf::Color(220, 220, 100));  // Yellow-ish
+        turn_indicator.setPosition({20, 20});
+
+        m_window.draw(thinking_text);
+    }
+}
+
+void play_state::handle_ai_turn(float dt)
+{
+    m_board_locked = true;
+
+    // Add a delay before AI moves to make it more natural
+    if (m_waiting_for_ai_move) {
+        m_ai_move_timer += dt;
+        if (m_ai_move_timer >= m_ai_move_delay) {
+            m_ai_move_timer = 0.0f;
+            m_waiting_for_ai_move = false;
+
+            try {
+                auto ai_move_opt = calculate_ai_move();
+                if (ai_move_opt) {
+                    bool move_result = execute_move(*ai_move_opt);
+
+                    if (!move_result) {
+                        std::println("AI move failed: from {} to {}", ai_move_opt->from, ai_move_opt->to);
+                    }
+                }
+            } catch (const std::exception& e) {
+                std::println("Error during AI move: {}", e.what());
+            }
+        }
+    } else {
+        m_waiting_for_ai_move = true;
+        m_ai_move_timer = 0.0f;
+    }
+}
+
+std::optional<move_info> play_state::calculate_ai_move()
+{
+    std::vector<move_info> all_legal_moves;
+    const auto             player_turn = m_game_state.get_player_turn();
+    const auto             piece_color =
+        (player_turn == game_state::player_turn::White) ? piece_t::color_t::White : piece_t::color_t::Black;
+
+    clear_selection();
+
+    for (move_t pos = 0; pos < 64; ++pos) {
+        const auto& piece = m_board[pos];
+        if (piece.get_type() != piece_t::type_t::Empty && piece.get_color() == piece_color) {
+            auto moves = move_generator::get_legal_moves(m_board, m_game_state, pos);
+            all_legal_moves.insert(all_legal_moves.end(), moves.begin(), moves.end());
+        }
+    }
+
+    if (all_legal_moves.empty()) {
+        // No legal moves available (should be detected as checkmate/stalemate elsewhere)
+        return std::nullopt;
+    }
+
+    static std::random_device                  rd;
+    static std::mt19937                        gen(rd());
+    std::uniform_int_distribution<std::size_t> dist(0, all_legal_moves.size() - 1);
+    std::size_t                                randomIndex = dist(gen);
+
+    return all_legal_moves[randomIndex];
+}
+
+bool play_state::is_current_player_ai() const
+{
+    const auto current_player = m_game_state.get_player_turn();
+    return (current_player == game_state::player_turn::White && m_white_player == player_t::AI) ||
+           (current_player == game_state::player_turn::Black && m_black_player == player_t::AI);
 }
 
 void play_state::handle_mouse_click(const sf::Vector2i& mouse_pos)
 {
     const auto clicked_pos = convert_to_board_pos(mouse_pos);
-    update_selected_tile(clicked_pos);
+    if (clicked_pos != 0xFF) {  // Valid board position
+        update_selected_tile(clicked_pos);
+    }
 }
 
 void play_state::update_selected_tile(move_t clicked_pos)
@@ -85,8 +226,11 @@ void play_state::update_selected_tile(move_t clicked_pos)
         return;
     }
 
-    if (is_valid_move(clicked_pos)) {
-        move_piece(current_sel, clicked_pos);
+    auto it =
+        std::ranges::find_if(m_current_valid_moves, [clicked_pos](const auto& move) { return move.to == clicked_pos; });
+
+    if (it != m_current_valid_moves.end()) {
+        execute_move(*it);
         clear_selection();
     } else {
         try_switch_selection(clicked_pos);
@@ -99,7 +243,6 @@ void play_state::try_select(move_t pos)
         m_selection.select(pos);
         m_renderer.set_selected_tile(pos);
 
-        // Get and display valid moves
         m_current_valid_moves = move_generator::get_legal_moves(m_board, m_game_state, pos);
         m_renderer.set_valid_moves(m_current_valid_moves);
     }
@@ -111,7 +254,6 @@ void play_state::try_switch_selection(move_t new_pos)
         m_selection.select(new_pos);
         m_renderer.set_selected_tile(new_pos);
 
-        // Update valid moves for new selection
         m_current_valid_moves = move_generator::get_legal_moves(m_board, m_game_state, new_pos);
         m_renderer.set_valid_moves(m_current_valid_moves);
     } else {
@@ -133,11 +275,6 @@ bool play_state::is_valid_selection(move_t pos) const
            std::to_underlying(m_game_state.get_player_turn()) == std::to_underlying(m_board[pos].get_color());
 }
 
-bool play_state::is_valid_move(move_t to) const
-{
-    return std::ranges::any_of(m_current_valid_moves, [to](const auto& move) { return move.to == to; });
-}
-
 move_t play_state::convert_to_board_pos(const sf::Vector2i& mouse_pos) const
 {
     int relative_x = mouse_pos.x - static_cast<int>(config::board::offset_x);
@@ -154,36 +291,22 @@ move_t play_state::convert_to_board_pos(const sf::Vector2i& mouse_pos) const
     return calculate_selected_tile(file, rank);
 }
 
-bool play_state::move_piece(move_t from, move_t to)
+bool play_state::execute_move(const move_info& move)
 {
-    if (from == to)
-        return false;
-
-    auto it = std::ranges::find_if(m_current_valid_moves, [to](const auto& move) { return move.to == to; });
-
-    if (it == m_current_valid_moves.end())
-        return false;
-
-    const auto& move = *it;
-
     if (move.is_en_passant()) {
-        handle_en_passant(from, to);
+        handle_en_passant(move.from, move.to);
     }
 
     if (move.is_castling()) {
-        handle_castling(from, to);
+        handle_castling(move.from, move.to);
     }
 
     if (move.is_promotion()) {
-        m_board[from].set_type(static_cast<piece_t::type_t>(move.promotion_piece));
+        m_board[move.from].set_type(static_cast<piece_t::type_t>(move.promotion_piece));
     }
 
-    move_piece_board(from, to);
-
-    update_game_state_after_move(from, to);
-
-    // Debug print
-    m_board.print();
+    move_piece_board(move.from, move.to);
+    update_game_state_after_move(move.from, move.to);
 
     return true;
 }
