@@ -15,7 +15,9 @@ void menu::init() {}
 void menu::handle_event(const sf::Event& event)
 {
     if (const auto* key_pressed = event.getIf<sf::Event::KeyPressed>()) {
-        if (key_pressed->scancode == sf::Keyboard::Scancode::Up) {
+        if (key_pressed->scancode == sf::Keyboard::Scancode::Escape) {
+            m_window.close();
+        } else if (key_pressed->scancode == sf::Keyboard::Scancode::Up) {
             m_selected_option =
                 (m_selected_option - 1 + static_cast<int>(menu_option::Count)) % static_cast<int>(menu_option::Count);
             m_renderer.set_selected_option(m_selected_option);
