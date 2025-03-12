@@ -1,6 +1,6 @@
 #include "states/state_manager.hpp"
 
-namespace chessfml {
+namespace chessfml::states {
 
 state_manager::state_manager(sf::RenderWindow& window) : m_states(), m_window(window) {}
 
@@ -64,4 +64,4 @@ void state_manager::render()
     }
 }
 
-}  // namespace chessfml
+}  // namespace chessfml::states

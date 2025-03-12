@@ -1,4 +1,4 @@
-#include "states/play_state.hpp"
+#include "states/play.hpp"
 
 #include "common/config.hpp"
 #include "common/utils.hpp"
@@ -7,12 +7,11 @@
 
 #include <SFML/Window/Keyboard.hpp>
 #include <SFML/Window/Mouse.hpp>
+
 #include <algorithm>
 #include <chrono>
 #include <random>
 #include <thread>
-
-#include <print>
 
 namespace {
 
@@ -23,9 +22,9 @@ std::uint8_t calculate_selected_tile(int file, int rank)
 
 }  // namespace
 
-namespace chessfml {
+namespace chessfml::states {
 
-play_state::play_state(sf::RenderWindow& window, player_t white_player, player_t black_player)
+play::play(sf::RenderWindow& window, player_t white_player, player_t black_player)
     : m_window(window),
       m_renderer(window),
       m_board(),
@@ -34,11 +33,11 @@ play_state::play_state(sf::RenderWindow& window, player_t white_player, player_t
       m_black_player(black_player)
 {}
 
-play_state::play_state(sf::RenderWindow& window,
-                       const board_t&    board,
-                       const game_state& state,
-                       player_t          white_player,
-                       player_t          black_player)
+play::play(sf::RenderWindow& window,
+           const board_t&    board,
+           const game_state& state,
+           player_t          white_player,
+           player_t          black_player)
     : m_window(window),
       m_renderer(window),
       m_board(board),
@@ -47,7 +46,7 @@ play_state::play_state(sf::RenderWindow& window,
       m_black_player(black_player)
 {}
 
-void play_state::init()
+void play::init()
 {
     bool is_board_empty = std::all_of(
         m_board.begin(), m_board.end(), [](const auto& piece) { return piece.get_type() == piece_t::type_t::Empty; });
@@ -63,9 +62,8 @@ void play_state::init()
     m_waiting_for_ai_move = m_board_locked;
 }
 
-void play_state::handle_event(const sf::Event& event)
+void play::handle_event(const sf::Event& event)
 {
-    // Always handle escape key to exit
     if (const auto* key_pressed = event.getIf<sf::Event::KeyPressed>()) {
         if (key_pressed->scancode == sf::Keyboard::Scancode::Escape) {
             m_manager->pop_state();  // Return to menu
@@ -73,12 +71,11 @@ void play_state::handle_event(const sf::Event& event)
         }
     }
 
-    // Skip other input handling if board is locked (AI is thinking or moving)
+    // Skip other input handling if board is locked (AI's turn)
     if (m_board_locked) {
         return;
     }
 
-    // Handle mouse clicks for human players
     if (const auto* mouse_button_pressed = event.getIf<sf::Event::MouseButtonPressed>()) {
         if (mouse_button_pressed->button == sf::Mouse::Button::Left) {
             handle_mouse_click({mouse_button_pressed->position.x, mouse_button_pressed->position.y});
@@ -86,7 +83,7 @@ void play_state::handle_event(const sf::Event& event)
     }
 }
 
-void play_state::update(float dt)
+void play::update(float dt)
 {
     if (is_current_player_ai()) {
         handle_ai_turn(dt);
@@ -98,7 +95,7 @@ void play_state::update(float dt)
     std::this_thread::sleep_for(std::chrono::milliseconds{30});
 }
 
-void play_state::render()
+void play::render()
 {
     m_renderer.render(m_board);
 
@@ -137,7 +134,7 @@ void play_state::render()
     }
 }
 
-void play_state::handle_ai_turn(float dt)
+void play::handle_ai_turn(float dt)
 {
     m_board_locked = true;
 
@@ -167,7 +164,7 @@ void play_state::handle_ai_turn(float dt)
     }
 }
 
-std::optional<move_info> play_state::calculate_ai_move()
+std::optional<move_info> play::calculate_ai_move()
 {
     std::vector<move_info> all_legal_moves;
     const auto             player_turn = m_game_state.get_player_turn();
@@ -197,14 +194,14 @@ std::optional<move_info> play_state::calculate_ai_move()
     return all_legal_moves[randomIndex];
 }
 
-bool play_state::is_current_player_ai() const
+bool play::is_current_player_ai() const
 {
     const auto current_player = m_game_state.get_player_turn();
     return (current_player == game_state::player_turn::White && m_white_player == player_t::AI) ||
            (current_player == game_state::player_turn::Black && m_black_player == player_t::AI);
 }
 
-void play_state::handle_mouse_click(const sf::Vector2i& mouse_pos)
+void play::handle_mouse_click(const sf::Vector2i& mouse_pos)
 {
     const auto clicked_pos = convert_to_board_pos(mouse_pos);
     if (clicked_pos != 0xFF) {  // Valid board position
@@ -212,7 +209,7 @@ void play_state::handle_mouse_click(const sf::Vector2i& mouse_pos)
     }
 }
 
-void play_state::update_selected_tile(move_t clicked_pos)
+void play::update_selected_tile(move_t clicked_pos)
 {
     if (!m_selection.has_selection()) {
         try_select(clicked_pos);
@@ -237,7 +234,7 @@ void play_state::update_selected_tile(move_t clicked_pos)
     }
 }
 
-void play_state::try_select(move_t pos)
+void play::try_select(move_t pos)
 {
     if (is_valid_selection(pos)) {
         m_selection.select(pos);
@@ -248,7 +245,7 @@ void play_state::try_select(move_t pos)
     }
 }
 
-void play_state::try_switch_selection(move_t new_pos)
+void play::try_switch_selection(move_t new_pos)
 {
     if (is_valid_selection(new_pos)) {
         m_selection.select(new_pos);
@@ -261,7 +258,7 @@ void play_state::try_switch_selection(move_t new_pos)
     }
 }
 
-void play_state::clear_selection()
+void play::clear_selection()
 {
     m_selection.clear();
     m_renderer.set_selected_tile(-1);
@@ -269,13 +266,13 @@ void play_state::clear_selection()
     m_renderer.set_valid_moves({});
 }
 
-bool play_state::is_valid_selection(move_t pos) const
+bool play::is_valid_selection(move_t pos) const
 {
     return pos < 64 && m_board[pos].get_type() != piece_t::type_t::Empty &&
            std::to_underlying(m_game_state.get_player_turn()) == std::to_underlying(m_board[pos].get_color());
 }
 
-move_t play_state::convert_to_board_pos(const sf::Vector2i& mouse_pos) const
+move_t play::convert_to_board_pos(const sf::Vector2i& mouse_pos) const
 {
     int relative_x = mouse_pos.x - static_cast<int>(config::board::offset_x);
     int relative_y = mouse_pos.y - static_cast<int>(config::board::offset_y);
@@ -291,7 +288,7 @@ move_t play_state::convert_to_board_pos(const sf::Vector2i& mouse_pos) const
     return calculate_selected_tile(file, rank);
 }
 
-bool play_state::execute_move(const move_info& move)
+bool play::execute_move(const move_info& move)
 {
     if (move.is_en_passant()) {
         handle_en_passant(move.from, move.to);
@@ -311,7 +308,7 @@ bool play_state::execute_move(const move_info& move)
     return true;
 }
 
-void play_state::move_piece_board(move_t from, move_t to)
+void play::move_piece_board(move_t from, move_t to)
 {
     m_board[to] = m_board[from];
     m_board[to].set_pos(to);
@@ -319,7 +316,7 @@ void play_state::move_piece_board(move_t from, move_t to)
     m_board[from] = piece_t{};
 }
 
-void play_state::handle_en_passant(move_t from, move_t to)
+void play::handle_en_passant(move_t from, move_t to)
 {
     const auto [capture_rank, capture_file] = position_to_rank_file(to);
     const auto   piece_color = m_board[from].get_color();
@@ -329,7 +326,7 @@ void play_state::handle_en_passant(move_t from, move_t to)
     m_board[ep_pos] = piece_t{};
 }
 
-void play_state::handle_castling(move_t from, move_t to)
+void play::handle_castling(move_t from, move_t to)
 {
     const auto piece_color = m_board[from].get_color();
     const bool is_kingside = to > from;
@@ -349,7 +346,7 @@ void play_state::handle_castling(move_t from, move_t to)
     }
 }
 
-void play_state::update_game_state_after_move(move_t from, move_t to)
+void play::update_game_state_after_move(move_t from, move_t to)
 {
     if (m_board[to].get_type() == piece_t::type_t::Pawn &&
         std::abs(static_cast<int>(to) - static_cast<int>(from)) == 16) {
@@ -377,7 +374,7 @@ void play_state::update_game_state_after_move(move_t from, move_t to)
     check_for_game_over();
 }
 
-void play_state::check_for_game_over()
+void play::check_for_game_over()
 {
     if (move_generator::is_checkmate(m_board, m_game_state)) {
         winner_t winner = winner_t::None;
@@ -388,11 +385,11 @@ void play_state::check_for_game_over()
             winner = winner_t::White;
         }
 
-        m_manager->push_state<game_over_state>(m_window, m_board, winner);
+        m_manager->push_state<game_over>(m_window, m_board, winner);
     } else if (move_generator::is_stalemate(m_board, m_game_state)) {
         // Stalemate is a draw
-        m_manager->push_state<game_over_state>(m_window, m_board, winner_t::Draw);
+        m_manager->push_state<game_over>(m_window, m_board, winner_t::Draw);
     }
 }
 
-}  // namespace chessfml
+}  // namespace chessfml::states

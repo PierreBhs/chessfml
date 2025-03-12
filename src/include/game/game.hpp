@@ -14,8 +14,8 @@ public:
     void run();
 
 private:
-    sf::RenderWindow m_window;
-    state_manager    m_state_manager;
+    sf::RenderWindow      m_window;
+    states::state_manager m_state_manager;
 };
 
 }  // namespace chessfml

@@ -1,17 +1,18 @@
 #pragma once
 
-#include <SFML/Graphics.hpp>
 #include "states/state.hpp"
 
-namespace chessfml {
+#include <SFML/Graphics.hpp>
+
+namespace chessfml::states {
 
 // enum class player_t { Human, AI };
 
-class game_selection_state : public state
+class game_selection : public state
 {
 public:
-    game_selection_state(sf::RenderWindow& window);
-    ~game_selection_state() override = default;
+    game_selection(sf::RenderWindow& window);
+    ~game_selection() override = default;
 
     void init() override;
     void handle_event(const sf::Event& event) override;
@@ -54,4 +55,4 @@ private:
         "Back to Main Menu"};
 };
 
-}  // namespace chessfml
+}  // namespace chessfml::states

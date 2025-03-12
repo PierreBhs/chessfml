@@ -1,19 +1,20 @@
 #pragma once
 
-#include <chrono>
 #include "game/board.hpp"
 #include "states/state.hpp"
 #include "ui/board_renderer.hpp"
 
-namespace chessfml {
+#include <chrono>
+
+namespace chessfml::states {
 
 enum class winner_t;  // Forward declaration
 
-class game_over_state : public state
+class game_over : public state
 {
 public:
-    game_over_state(sf::RenderWindow& window, const board_t& final_board, winner_t winner);
-    ~game_over_state() override = default;
+    game_over(sf::RenderWindow& window, const board_t& final_board, winner_t winner);
+    ~game_over() override = default;
 
     void init() override;
     void handle_event(const sf::Event& event) override;
@@ -35,4 +36,4 @@ private:
     sf::Text m_countdown_text{m_font};
 };
 
-}  // namespace chessfml
+}  // namespace chessfml::states

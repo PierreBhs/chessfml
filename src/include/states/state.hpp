@@ -1,7 +1,8 @@
 #pragma once
 
 #include <SFML/Window/Event.hpp>
-namespace chessfml {
+
+namespace chessfml::states {
 
 class state_manager;
 
@@ -24,4 +25,4 @@ protected:
     state_manager* m_manager{nullptr};
 };
 
-}  // namespace chessfml
+}  // namespace chessfml::states

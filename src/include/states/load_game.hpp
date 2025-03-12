@@ -1,26 +1,26 @@
 #pragma once
 
-#include <SFML/Graphics.hpp>
-
 #include "game/board.hpp"
 #include "game/game_state.hpp"
 #include "states/state.hpp"
+
+#include <SFML/Graphics.hpp>
 
 #include <array>
 #include <filesystem>
 #include <optional>
 #include <string>
 
-namespace chessfml {
+namespace chessfml::states {
 
 enum class load_method { Direct, FromFile };
 enum class player_choice { White, Black };
 
-class load_game_state : public state
+class load_game : public state
 {
 public:
-    load_game_state(sf::RenderWindow& window);
-    ~load_game_state() override = default;
+    load_game(sf::RenderWindow& window);
+    ~load_game() override = default;
 
     void init() override;
     void handle_event(const sf::Event& event) override;
@@ -97,4 +97,4 @@ private:
     std::optional<std::string> m_dialog_result;
 };
 
-}  // namespace chessfml
+}  // namespace chessfml::states

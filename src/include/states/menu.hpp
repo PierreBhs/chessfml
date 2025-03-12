@@ -3,13 +3,13 @@
 #include "states/state.hpp"
 #include "ui/menu_renderer.hpp"
 
-namespace chessfml {
+namespace chessfml::states {
 
-class menu_state : public state
+class menu : public state
 {
 public:
-    menu_state(sf::RenderWindow& window);
-    ~menu_state() override = default;
+    menu(sf::RenderWindow& window);
+    ~menu() override = default;
 
     void init() override;
     void handle_event(const sf::Event& event) override;
@@ -26,4 +26,4 @@ private:
     int               m_selected_option{0};
 };
 
-}  // namespace chessfml
+}  // namespace chessfml::states

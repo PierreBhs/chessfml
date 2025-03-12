@@ -1,7 +1,7 @@
 #include "game/game.hpp"
 
 #include "common/config.hpp"
-#include "states/menu_state.hpp"
+#include "states/menu.hpp"
 
 namespace chessfml {
 
@@ -9,7 +9,7 @@ game::game()
     : m_window(sf::VideoMode({config::game::WIDTH, config::game::HEIGHT}), "ChesSfmL"), m_state_manager(m_window)
 {
     // Initialize with menu state
-    m_state_manager.push_state<menu_state>(m_window);
+    m_state_manager.push_state<states::menu>(m_window);
 }
 
 void game::run()

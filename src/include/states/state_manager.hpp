@@ -7,7 +7,7 @@
 #include <memory>
 #include <stack>
 
-namespace chessfml {
+namespace chessfml::states {
 
 class state_manager
 {
@@ -64,4 +64,4 @@ void state_manager::replace_state(Args&&... args)
     m_states.push(std::move(new_state));
 }
 
-}  // namespace chessfml
+}  // namespace chessfml::states

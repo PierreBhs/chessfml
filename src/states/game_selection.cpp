@@ -1,21 +1,21 @@
-#include "states/game_selection_state.hpp"
+#include "states/game_selection.hpp"
 
 #include "common/config.hpp"
-#include "states/play_state.hpp"
+#include "states/play.hpp"
 #include "states/state_manager.hpp"
 
 #include <thread>
 
-namespace chessfml {
+namespace chessfml::states {
 
-game_selection_state::game_selection_state(sf::RenderWindow& window) : m_window(window) {}
+game_selection::game_selection(sf::RenderWindow& window) : m_window(window) {}
 
-void game_selection_state::init()
+void game_selection::init()
 {
     create_menu_items();
 }
 
-void game_selection_state::create_menu_items()
+void game_selection::create_menu_items()
 {
     const float window_width = static_cast<float>(config::game::WIDTH);
     const float window_height = static_cast<float>(config::game::HEIGHT);
@@ -50,7 +50,7 @@ void game_selection_state::create_menu_items()
     update_button_colors();
 }
 
-void game_selection_state::handle_event(const sf::Event& event)
+void game_selection::handle_event(const sf::Event& event)
 {
     if (const auto* key_pressed = event.getIf<sf::Event::KeyPressed>()) {
         if (key_pressed->scancode == sf::Keyboard::Scancode::Up) {
@@ -77,12 +77,12 @@ void game_selection_state::handle_event(const sf::Event& event)
     }
 }
 
-void game_selection_state::update([[maybe_unused]] float dt)
+void game_selection::update([[maybe_unused]] float dt)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds{30});
 }
 
-void game_selection_state::render()
+void game_selection::render()
 {
     m_window.clear(sf::Color(40, 40, 40));
 
@@ -93,7 +93,6 @@ void game_selection_state::render()
                        static_cast<float>(config::game::HEIGHT) * 0.15f});
     m_window.draw(title);
 
-    // Draw subtitle instruction
     sf::Text subtitle(m_font, "Choose how you want to play", 24);
     subtitle.setFillColor(sf::Color(200, 200, 200));
     sf::FloatRect subtitleBounds = subtitle.getLocalBounds();
@@ -107,7 +106,7 @@ void game_selection_state::render()
     }
 }
 
-void game_selection_state::update_component_states()
+void game_selection::update_component_states()
 {
     sf::Vector2i mouse_pos = sf::Mouse::getPosition(m_window);
     sf::Vector2f mouse_pos_f = static_cast<sf::Vector2f>(mouse_pos);
@@ -119,7 +118,7 @@ void game_selection_state::update_component_states()
     update_button_colors();
 }
 
-bool game_selection_state::is_point_in_component(const sf::Vector2f& point, size_t index) const
+bool game_selection::is_point_in_component(const sf::Vector2f& point, size_t index) const
 {
     if (index < m_menu_items.size()) {
         return m_menu_items[index].shape.getGlobalBounds().contains(point);
@@ -127,7 +126,7 @@ bool game_selection_state::is_point_in_component(const sf::Vector2f& point, size
     return false;
 }
 
-void game_selection_state::handle_mouse_click(const sf::Vector2f& pos)
+void game_selection::handle_mouse_click(const sf::Vector2f& pos)
 {
     for (size_t i = 0; i < m_menu_items.size(); ++i) {
         if (is_point_in_component(pos, i)) {
@@ -139,17 +138,17 @@ void game_selection_state::handle_mouse_click(const sf::Vector2f& pos)
     }
 }
 
-void game_selection_state::activate_selected_option()
+void game_selection::activate_selected_option()
 {
     switch (m_selected_option) {
         case game_option::HumanVsHuman:
-            m_manager->replace_state<play_state>(m_window, player_t::Human, player_t::Human);
+            m_manager->replace_state<play>(m_window, player_t::Human, player_t::Human);
             break;
         case game_option::HumanVsAI_White:
-            m_manager->replace_state<play_state>(m_window, player_t::Human, player_t::AI);
+            m_manager->replace_state<play>(m_window, player_t::Human, player_t::AI);
             break;
         case game_option::HumanVsAI_Black:
-            m_manager->replace_state<play_state>(m_window, player_t::AI, player_t::Human);
+            m_manager->replace_state<play>(m_window, player_t::AI, player_t::Human);
             break;
         case game_option::Back:
             m_manager->pop_state();
@@ -159,7 +158,7 @@ void game_selection_state::activate_selected_option()
     }
 }
 
-void game_selection_state::update_button_colors()
+void game_selection::update_button_colors()
 {
     for (size_t i = 0; i < m_menu_items.size(); ++i) {
         auto& item = m_menu_items[i];
@@ -173,4 +172,4 @@ void game_selection_state::update_button_colors()
     }
 }
 
-}  // namespace chessfml
+}  // namespace chessfml::states

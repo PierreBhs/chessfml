@@ -1,17 +1,18 @@
-#include <thread>
-#include "states/menu_state.hpp"
+#include "states/menu.hpp"
 
-#include "states/game_selection_state.hpp"
-#include "states/load_game_state.hpp"
+#include "states/game_selection.hpp"
+#include "states/load_game.hpp"
 #include "states/state_manager.hpp"
 
-namespace chessfml {
+#include <thread>
 
-menu_state::menu_state(sf::RenderWindow& window) : m_window(window), m_renderer(window) {}
+namespace chessfml::states {
 
-void menu_state::init() {}
+menu::menu(sf::RenderWindow& window) : m_window(window), m_renderer(window) {}
 
-void menu_state::handle_event(const sf::Event& event)
+void menu::init() {}
+
+void menu::handle_event(const sf::Event& event)
 {
     if (const auto* key_pressed = event.getIf<sf::Event::KeyPressed>()) {
         if (key_pressed->scancode == sf::Keyboard::Scancode::Up) {
@@ -49,14 +50,14 @@ void menu_state::handle_event(const sf::Event& event)
     }
 }
 
-void menu_state::activate_selected_option()
+void menu::activate_selected_option()
 {
     switch (static_cast<menu_option>(m_selected_option)) {
         case menu_option::Play:
-            m_manager->push_state<game_selection_state>(m_window);
+            m_manager->push_state<game_selection>(m_window);
             break;
         case menu_option::LoadGame:
-            m_manager->push_state<load_game_state>(m_window);
+            m_manager->push_state<load_game>(m_window);
             break;
         case menu_option::Exit:
             m_window.close();
@@ -65,15 +66,14 @@ void menu_state::activate_selected_option()
             break;
     }
 }
-void menu_state::update([[maybe_unused]] float dt)
+void menu::update([[maybe_unused]] float dt)
 {
-    // Nothing to update for now
     std::this_thread::sleep_for(std::chrono::milliseconds{30});
 }
 
-void menu_state::render()
+void menu::render()
 {
     m_renderer.render();
 }
 
-}  // namespace chessfml
+}  // namespace chessfml::states

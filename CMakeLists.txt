@@ -25,11 +25,11 @@ add_executable(${PROJECT_NAME}
                 ${CMAKE_SOURCE_DIR}/src/game/game_state.cpp # Find a better name to not confuse with the states/
                 
                 ${CMAKE_SOURCE_DIR}/src/states/state_manager.cpp
-                ${CMAKE_SOURCE_DIR}/src/states/menu_state.cpp
-                ${CMAKE_SOURCE_DIR}/src/states/play_state.cpp
-                ${CMAKE_SOURCE_DIR}/src/states/load_game_state.cpp
+                ${CMAKE_SOURCE_DIR}/src/states/menu.cpp
+                ${CMAKE_SOURCE_DIR}/src/states/play.cpp
+                ${CMAKE_SOURCE_DIR}/src/states/load_game.cpp
                 ${CMAKE_SOURCE_DIR}/src/states/game_over.cpp
-                ${CMAKE_SOURCE_DIR}/src/states/game_selection_state.cpp
+                ${CMAKE_SOURCE_DIR}/src/states/game_selection.cpp
 
                 ${CMAKE_SOURCE_DIR}/src/ui/menu_renderer.cpp
                 ${CMAKE_SOURCE_DIR}/src/ui/board_renderer.cpp

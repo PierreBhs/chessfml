@@ -1,18 +1,18 @@
 #include "states/game_over.hpp"
 
-#include "states/play_state.hpp"
+#include "states/play.hpp"
 #include "states/state_manager.hpp"
 
 #include <cmath>
 #include <format>
 
-namespace chessfml {
+namespace chessfml::states {
 
-game_over_state::game_over_state(sf::RenderWindow& window, const board_t& final_board, winner_t winner)
+game_over::game_over(sf::RenderWindow& window, const board_t& final_board, winner_t winner)
     : m_window(window), m_renderer(window), m_final_board(final_board), m_winner(winner)
 {}
 
-void game_over_state::init()
+void game_over::init()
 {
     m_start_time = std::chrono::steady_clock::now();
 
@@ -45,29 +45,29 @@ void game_over_state::init()
     m_winner_text.setPosition({(m_window.getSize().x - winnerBounds.size.x) / 2, m_window.getSize().y * 0.5f});
 }
 
-void game_over_state::handle_event(const sf::Event& event)
+void game_over::handle_event(const sf::Event& event)
 {
     if (const auto* key_pressed = event.getIf<sf::Event::KeyPressed>()) {
         if (key_pressed->scancode == sf::Keyboard::Scancode::Escape ||
             key_pressed->scancode == sf::Keyboard::Scancode::Enter) {
-            // Pop this state and the play state to return to the menu
-            m_manager->pop_state();  // Pop GameOverState
-            m_manager->pop_state();  // Pop PlayState
+            m_manager->pop_state();  // GameOverState
+            m_manager->pop_state();  // PlayState
+            // TODO: check this
+            // m_manager->pop_states(2);
         }
     }
 }
 
-void game_over_state::update(float dt)
+void game_over::update(float dt)
 {
     m_countdown -= dt;
 
     if (m_countdown <= 0.0f) {
-        // Pop both states at once using the new method
         m_manager->pop_states(2);
     }
 }
 
-void game_over_state::render()
+void game_over::render()
 {
     m_renderer.render(m_final_board);
 
@@ -89,4 +89,4 @@ void game_over_state::render()
     m_window.draw(m_countdown_text);
 }
 
-}  // namespace chessfml
+}  // namespace chessfml::states

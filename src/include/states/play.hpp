@@ -8,7 +8,7 @@
 
 #include <vector>
 
-namespace chessfml {
+namespace chessfml::states {
 
 enum class player_t { Human, AI };
 
@@ -26,20 +26,18 @@ private:
 
 enum class winner_t { None, White, Black, Draw };
 
-class play_state : public state
+class play : public state
 {
 public:
-    play_state(sf::RenderWindow& window,
-               player_t          white_player = player_t ::Human,
-               player_t          black_player = player_t ::Human);
+    play(sf::RenderWindow& window, player_t white_player = player_t ::Human, player_t black_player = player_t ::Human);
     // loading a game from FEN
-    play_state(sf::RenderWindow& window,
-               const board_t&    board,
-               const game_state& state,
-               player_t          white_player = player_t ::Human,
-               player_t          black_player = player_t ::Human);
+    play(sf::RenderWindow& window,
+         const board_t&    board,
+         const game_state& state,
+         player_t          white_player = player_t ::Human,
+         player_t          black_player = player_t ::Human);
 
-    ~play_state() override = default;
+    ~play() override = default;
 
     void init() override;
     void handle_event(const sf::Event& event) override;
@@ -86,4 +84,4 @@ private:
     bool  m_board_locked{false};  // When true, user inputs affecting the board are ignored
 };
 
-}  // namespace chessfml
+}  // namespace chessfml::states

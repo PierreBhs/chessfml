@@ -1,28 +1,28 @@
-#include "states/load_game_state.hpp"
+#include "states/load_game.hpp"
 
 #include "common/config.hpp"
 #include "common/fen.hpp"
-#include "states/play_state.hpp"
+#include "states/play.hpp"
 #include "states/state_manager.hpp"
 
 #include <SFML/Window/Keyboard.hpp>
+
 #include <filesystem>
 #include <format>
 #include <fstream>
-#include <print>
 #include <thread>
 
-namespace chessfml {
+namespace chessfml::states {
 
-load_game_state::load_game_state(sf::RenderWindow& window) : m_window(window) {}
+load_game::load_game(sf::RenderWindow& window) : m_window(window) {}
 
-void load_game_state::init()
+void load_game::init()
 {
     create_ui_components();
     update_preview();
 }
 
-void load_game_state::create_ui_components()
+void load_game::create_ui_components()
 {
     const float window_width = static_cast<float>(config::game::WIDTH);
     const float window_height = static_cast<float>(config::game::HEIGHT);
@@ -167,7 +167,7 @@ void load_game_state::create_ui_components()
                                                 (cancel_button.background.getSize().y - textBounds.size.y) / 2 - 5.0f));
 }
 
-void load_game_state::handle_event(const sf::Event& event)
+void load_game::handle_event(const sf::Event& event)
 {
     if (const auto* key_event = event.getIf<sf::Event::KeyPressed>()) {
         if (key_event->code == sf::Keyboard::Key::V && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LControl)) {
@@ -215,7 +215,7 @@ void load_game_state::handle_event(const sf::Event& event)
     }
 }
 
-void load_game_state::update([[maybe_unused]] float dt)
+void load_game::update([[maybe_unused]] float dt)
 {
     if (m_cursor_clock.getElapsedTime().asSeconds() >= m_cursor_blink_interval) {
         m_cursor_visible = !m_cursor_visible;
@@ -241,7 +241,7 @@ void load_game_state::update([[maybe_unused]] float dt)
     std::this_thread::sleep_for(std::chrono::milliseconds{30});
 }
 
-void load_game_state::render()
+void load_game::render()
 {
     m_window.clear(sf::Color(40, 40, 40));
 
@@ -345,7 +345,7 @@ void load_game_state::render()
     }
 }
 
-void load_game_state::update_component_states()
+void load_game::update_component_states()
 {
     sf::Vector2i mouse_pos = sf::Mouse::getPosition(m_window);
     sf::Vector2f mouse_pos_f = static_cast<sf::Vector2f>(mouse_pos);
@@ -386,13 +386,13 @@ void load_game_state::update_component_states()
     }
 }
 
-bool load_game_state::is_point_in_component(const sf::Vector2f& point, ui_component comp) const noexcept
+bool load_game::is_point_in_component(const sf::Vector2f& point, ui_component comp) const noexcept
 {
     const auto& component = m_components[static_cast<size_t>(comp)];
     return component.background.getGlobalBounds().contains(point);
 }
 
-void load_game_state::handle_mouse_click(const sf::Vector2f& pos)
+void load_game::handle_mouse_click(const sf::Vector2f& pos)
 {
     auto& fen_input = m_components[static_cast<size_t>(ui_component::FenInput)];
 
@@ -475,7 +475,7 @@ void load_game_state::handle_mouse_click(const sf::Vector2f& pos)
     }
 }
 
-void load_game_state::handle_text_input(const sf::Event::TextEntered& text)
+void load_game::handle_text_input(const sf::Event::TextEntered& text)
 {
     if (m_current_method == load_method::Direct && m_components[static_cast<size_t>(ui_component::FenInput)].active &&
         text.unicode >= 32 && text.unicode < 128) {
@@ -492,7 +492,7 @@ void load_game_state::handle_text_input(const sf::Event::TextEntered& text)
     }
 }
 
-void load_game_state::handle_key_pressed(const sf::Event::KeyPressed& key)
+void load_game::handle_key_pressed(const sf::Event::KeyPressed& key)
 {
     if (key.code == sf::Keyboard::Key::Escape) {
         m_manager->pop_state();
@@ -502,26 +502,22 @@ void load_game_state::handle_key_pressed(const sf::Event::KeyPressed& key)
     if (m_components[static_cast<size_t>(ui_component::FenInput)].active) {
         if (key.code == sf::Keyboard::Key::Backspace) {
             if (m_text_selected) {
-                // Delete selected text
                 m_fen_string.erase(m_selection_start, m_selection_end - m_selection_start);
                 m_cursor_position = m_selection_start;
                 m_text_selected = false;
                 m_components[static_cast<size_t>(ui_component::FenInput)].text.setString(m_fen_string);
             } else if (!m_fen_string.empty() && m_cursor_position > 0) {
-                // Delete character before cursor
                 m_fen_string.erase(m_cursor_position - 1, 1);
                 m_cursor_position--;
                 m_components[static_cast<size_t>(ui_component::FenInput)].text.setString(m_fen_string);
             }
         } else if (key.code == sf::Keyboard::Key::Delete) {
             if (m_text_selected) {
-                // Delete selected text
                 m_fen_string.erase(m_selection_start, m_selection_end - m_selection_start);
                 m_cursor_position = m_selection_start;
                 m_text_selected = false;
                 m_components[static_cast<size_t>(ui_component::FenInput)].text.setString(m_fen_string);
             } else if (m_cursor_position < m_fen_string.length()) {
-                // Delete character at cursor
                 m_fen_string.erase(m_cursor_position, 1);
                 m_components[static_cast<size_t>(ui_component::FenInput)].text.setString(m_fen_string);
             }
@@ -539,7 +535,7 @@ void load_game_state::handle_key_pressed(const sf::Event::KeyPressed& key)
     }
 }
 
-void load_game_state::attempt_load_game()
+void load_game::attempt_load_game()
 {
     if (!m_fen_valid) {
         m_validation_message = "Cannot load: FEN string is invalid!";
@@ -561,16 +557,14 @@ void load_game_state::attempt_load_game()
         new_state.set_player_turn(game_state::player_turn::Black);
     }
 
-    m_manager->replace_state<play_state>(m_window, new_board, new_state);
+    m_manager->replace_state<play>(m_window, new_board, new_state);
 }
 
-void load_game_state::validate_fen()
+void load_game::validate_fen()
 {
-    // Create temporary objects for validation
     board_t    test_board;
     game_state test_state;
 
-    // Try to parse the FEN string
     auto error = fen::parse_fen(m_fen_string, test_board, test_state);
 
     if (!error) {
@@ -584,33 +578,28 @@ void load_game_state::validate_fen()
     }
 }
 
-bool load_game_state::load_fen_from_file(const std::string& filename)
+bool load_game::load_fen_from_file(const std::string& filename)
 {
     try {
-        // Check if file exists
         if (!std::filesystem::exists(filename)) {
             m_validation_message = "Error: File does not exist";
             return false;
         }
 
-        // Open the file
         std::ifstream file(filename);
         if (!file.is_open()) {
             m_validation_message = "Error: Could not open file";
             return false;
         }
 
-        // Read the FEN string
         std::string fen;
         std::getline(file, fen);
 
-        // Check if the FEN string is valid
         if (!fen::validate_board_section(fen)) {
             m_validation_message = "Error: File does not contain a valid FEN string";
             return false;
         }
 
-        // Set the FEN string
         m_fen_string = fen;
 
         return true;
@@ -620,21 +609,14 @@ bool load_game_state::load_fen_from_file(const std::string& filename)
     }
 }
 
-void load_game_state::open_file_dialog()
+void load_game::open_file_dialog()
 {
-    // In a real application, you would use a native file dialog here
-    // For this example, we'll simulate a file dialog with a fixed result
     m_dialog_result = "chess_position.fen";
-
-    // For a real implementation, you could use a library like nativefiledialog or ImGui
-    // Or implement your own file selection UI
 }
 
-void load_game_state::update_preview()
+void load_game::update_preview()
 {
-    // This would be used to show a preview of the board
-    // For this implementation, we're just validating the FEN
     validate_fen();
 }
 
-}  // namespace chessfml
+}  // namespace chessfml::states
