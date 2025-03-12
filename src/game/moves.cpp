@@ -1,9 +1,10 @@
 #include "game/moves.hpp"
 
-#include <algorithm>
-#include <array>
 #include "common/config.hpp"
 #include "common/utils.hpp"
+
+#include <algorithm>
+#include <array>
 
 namespace {
 

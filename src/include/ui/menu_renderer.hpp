@@ -1,7 +1,9 @@
 #pragma once
 
-#include <array>
+#include "common/font.hpp"
 #include "ui/renderer.hpp"
+
+#include <array>
 
 namespace chessfml {
 
@@ -21,8 +23,6 @@ public:
     void set_hovered(std::size_t index, bool hovered);
     bool is_button_hovered(std::size_t index, sf::Vector2f mouse_pos) const;
 
-    const sf::Font& get_font() const { return m_font; }
-
 private:
     struct menu_item
     {
@@ -35,7 +35,7 @@ private:
     void create_menu_items();
     void update_button_colors();
 
-    inline static const sf::Font m_font{"data/fonts/Montserrat-Regular.ttf"};
+    inline static const sf::Font m_font{get_font()};
     std::array<menu_item, 3>     m_menu_items;
     std::size_t                  m_selected_option{0u};
 

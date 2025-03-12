@@ -99,11 +99,7 @@ void play::render()
 {
     m_renderer.render(m_board);
 
-    // Make singleton Font ? Too many sf::Font object created for the same font
-    static const sf::Font font{"data/fonts/Montserrat-Regular.ttf"};
-
-    sf::Text turn_indicator{font};
-    turn_indicator.setFont(font);
+    sf::Text turn_indicator{get_font()};
     turn_indicator.setCharacterSize(24);
     turn_indicator.setPosition({20, 20});
 
@@ -124,7 +120,7 @@ void play::render()
     m_window.draw(turn_indicator);
 
     if (m_waiting_for_ai_move) {
-        sf::Text thinking_text{font};
+        sf::Text thinking_text{get_font()};
         thinking_text.setCharacterSize(20);
         thinking_text.setString("AI is thinking...");
         thinking_text.setFillColor(sf::Color(220, 220, 100));  // Yellow-ish

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/font.hpp"
 #include "game/board.hpp"
 #include "game/game_state.hpp"
 #include "states/state.hpp"
@@ -7,7 +8,6 @@
 #include <SFML/Graphics.hpp>
 
 #include <array>
-#include <filesystem>
 #include <optional>
 #include <string>
 
@@ -29,8 +29,7 @@ public:
 
 private:
     sf::RenderWindow&            m_window;
-    inline static const sf::Font m_font{"data/fonts/Montserrat-Regular.ttf"};
-    sf::Text                     m_message{m_font, "Load Game feature coming soon...", 32};
+    inline static const sf::Font m_font{get_font()};
 
     enum class ui_component {
         FenInput,

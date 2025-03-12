@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/font.hpp"
 #include "states/state.hpp"
 
 #include <SFML/Graphics.hpp>
@@ -44,7 +45,7 @@ private:
     void update_button_colors();
 
     sf::RenderWindow&                                              m_window;
-    inline static const sf::Font                                   m_font{"data/fonts/Montserrat-Regular.ttf"};
+    inline static const sf::Font                                   m_font{get_font()};
     std::array<menu_item, static_cast<size_t>(game_option::Count)> m_menu_items;
     game_option                                                    m_selected_option{game_option::HumanVsHuman};
 

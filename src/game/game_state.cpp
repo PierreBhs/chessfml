@@ -1,4 +1,3 @@
-// In "game/game_state.cpp"
 #include "game/game_state.hpp"
 
 namespace chessfml {

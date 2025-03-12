@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/font.hpp"
 #include "game/board.hpp"
 #include "states/state.hpp"
 #include "ui/board_renderer.hpp"
@@ -29,7 +30,7 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> m_start_time;
     float                                              m_countdown{3.0f};
 
-    inline static const sf::Font m_font{"data/fonts/Montserrat-Regular.ttf"};
+    inline static const sf::Font m_font{get_font()};
 
     sf::Text m_checkmate_text{m_font, "Checkmate!", 64};
     sf::Text m_winner_text{m_font};
